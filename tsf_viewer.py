@@ -39,7 +39,7 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
     Globális hibakezelő: elkap minden kezeletlen kivételt a programban,
     kiírja a hiba részleteit, majd várakozik egy gombnyomásra kilépés előtt.
     """
-    # A Ctrl+C (KeyboardInterrupt) megszakítást hagyjuk normálisosan lefutni
+    # A Ctrl+C (KeyboardInterrupt) megszakítást hagyjuk simán lefutni
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
@@ -49,7 +49,6 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
     print("=" * 60)
     traceback.print_exception(exc_type, exc_value, exc_traceback)
     print("=" * 60)
-
     input()
 
 sys.excepthook = global_exception_handler
@@ -85,6 +84,13 @@ if not filename.lower().endswith(".tsf"):
     print(f"ERROR: '{filename}' is not a .tsf file!")
     input()
     sys.exit(1)
+
+if len(sys.argv) >= 3:
+    filepath2 = sys.argv[2]
+    if not filepath2.endswith(".earthquake.tsf"):
+        print(f"ERROR: '{os.path.basename(filepath2)}' is not a .earthquake.tsf file!")
+        input()
+        sys.exit(1)
 
 parts = base_name.split("_")
 station = parts[0].upper() if len(parts) > 0 else ""
@@ -192,9 +198,16 @@ def load_tsf(path, handle_gaps=False, replace_9999=False):
             path, skiprows=data_start_line, sep=r"\s+", header=None, comment="[", on_bad_lines="skip", engine="c"
         )
     except Exception as e:
+        elapsed = time.time() - start_time
+        loading_stop.set()
+        anim_thread.join()
+        sys.stdout.write(f"\rReading '{f_name}'... FAILED! ({elapsed:.3f}s)\n")
+        sys.stdout.flush()
         print(f"ERROR while reading file: {e}")
         df = pd.DataFrame()
-    finally:
+        input()
+        sys.exit(1)
+    else:
         elapsed = time.time() - start_time
         loading_stop.set()
         anim_thread.join()
@@ -261,7 +274,6 @@ if len(units) < len(channel_names):
 
 timestamps2, data2, channel_names2, units2 = None, None, [], []
 if len(sys.argv) >= 3:
-    filepath2 = sys.argv[2]
     try:
         timestamps2, data2, channel_names2, units2, _, _ = load_tsf(
             filepath2, handle_gaps=False, replace_9999=True
@@ -281,16 +293,15 @@ class DateAxis(pg.AxisItem):
         self.date_only = date_only
 
     def tickStrings(self, values, scale, spacing):
-        # A timezone.utc megadásával timezone-aware UTC objektumot kapunk sárga figyelmeztetések nélkül
         if self.date_only:
             return [
-                datetime.fromtimestamp(v, timezone.utc).strftime("%Y-%m-%d")
+                datetime.fromtimestamp(v).strftime("%Y-%m-%d")
                 for v in values
             ]
 
         if spacing < 1:
             return [
-                datetime.fromtimestamp(v, timezone.utc).strftime(
+                datetime.fromtimestamp(v).strftime(
                     "%H:%M:%S.%f"
                 )[:-3]
                 for v in values
@@ -299,7 +310,7 @@ class DateAxis(pg.AxisItem):
         fmt = "%H:%M:%S" if spacing < 60 else "%H:%M"
 
         return [
-            datetime.fromtimestamp(v, timezone.utc).strftime(fmt)
+            datetime.fromtimestamp(v).strftime(fmt)
             for v in values
         ]
 
@@ -1317,7 +1328,7 @@ class Viewer(QWidget):
 
             # 6. Megjelenítés: Esemény ablak (popup) VS. Sima adatminta pont
             if clicked_event:
-                raw_text = str(clicked_event.get('text', 'Nincs elérhető szöveg'))
+                raw_text = str(clicked_event.get('text', 'No data'))
                 formatted_text = raw_text.replace('\n', '<br>')
 
                 html_text = f"""
