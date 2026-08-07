@@ -58,7 +58,7 @@ sys.excepthook = global_exception_handler
 # =====================================================
 is_win = platform.system() == "Windows"
 #is_win = True
-exec_cmd = r".\tsf_viewer.exe" if is_win else "./tsf_viewer"
+exec_cmd = r".\TSF_Viewer.exe" if is_win else "./tsf_viewer"
 
 if len(sys.argv) < 2:
     print("Usage:")
