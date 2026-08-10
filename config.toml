@@ -1,0 +1,25 @@
+[plot]
+# A görbén megjelenő szöveg mérete, pt-ben számolva
+# Alapértelmezett érték: 10
+font_size = 11
+
+# A görbe vonalvastagsága
+# Alapértelmezett érték: 3
+line_width = 3
+
+# A felső X tengelyen lévő eseményjelölők mérete
+# Alapértelmezett érték: 13
+event_marker_size = 13
+
+# A földrengés kipattanást jelölő pötty színe és mérete
+# Alapértelmezett érték: "#00FFF1" és 8
+occurrence_marker_color = "#00FFF1"
+occurrence_marker_size = 10
+
+[path]
+# A program futásához szükséges fájlok elérési útjai
+
+# Alapértelmezett érték: "datumok.txt" vagy "ftp.json"
+# ilyenkor a projekt könyvtárban keressük.
+datumok_txt = "datumok.txt"
+ftp_json = "ftp.json"
