@@ -6,6 +6,7 @@ import csv
 import uuid
 import time
 import ctypes
+import tomllib
 import requests
 import platform
 import threading
@@ -52,6 +53,24 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
     input()
 
 sys.excepthook = global_exception_handler
+
+# =====================================================
+# Config file betöltése
+# =====================================================
+with open("config.toml", "rb") as f:
+    config = tomllib.load(f)
+
+plot_config = config.get("plot", {})
+
+font_size = plot_config.get("font_size", 10)
+line_width = plot_config.get("line_width", 3)
+event_marker_size = plot_config.get("event_marker_size", 13)
+occurrence_marker_color = plot_config.get("occurrence_marker_color", "#00FFF1")
+occurrence_marker_size =  plot_config.get("occurrence_marker_size", 8)
+
+
+path_config = config.get("path", {})
+datumok_txt = path_config.get("datumok_txt", "datumok.txt")
 
 # =====================================================
 # Argumentumok kezelése és inicializálás
@@ -103,7 +122,7 @@ if station == "CONRAD":
 print(f"Station: {station}")
 print(f"Sensor: {sensor}")
 
-if not os.path.exists("datumok.txt"):
+if not os.path.exists(datumok_txt):
     print("WARNING: 'datumok.txt' is missing")
 
 # =====================================================
@@ -439,11 +458,11 @@ class Viewer(QWidget):
 
     def _draw_initial_data(self):
         """Fő görbék és rétegek grafikonhoz adása."""
-        self.curve = self.plot.plot(self.t_array, self.d_array[:, 0], pen=pg.mkPen("r", width=3))
+        self.curve = self.plot.plot(self.t_array, self.d_array[:, 0], pen=pg.mkPen("r", width=line_width))
         self.curve.setDownsampling(auto=True)
         self.curve.setClipToView(True)
 
-        self.scatter2 = self.plot.plot([], [], pen=None, symbol='o', symbolBrush='g', symbolPen='g', symbolSize=8)
+        self.scatter2 = self.plot.plot([], [], pen=None, symbol='o', symbolBrush=occurrence_marker_color, symbolPen=occurrence_marker_color, symbolSize=occurrence_marker_size)
         self.plot.showGrid(x=True, y=True)
 
     # ------------------------------------------------------------------
@@ -498,8 +517,8 @@ class Viewer(QWidget):
             matched_event_texts)
 
         html_text = f"""
-        <div style="color: #00FFCC; font-family: monospace; font-size: 9pt;">
-            <b style="font-size: 10pt;">[ EVENT INFO ]</b><br>
+        <div style="color: #00FFCC; font-family: monospace; font-size: {font_size}pt;">
+            <b style="font-size: {font_size + 1}pt;">[ EVENT INFO ]</b><br>
             <b>Date: {file_date_str}</b>
             <hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">
             <div style="line-height: 1.3;">{formatted_text}</div>
@@ -606,7 +625,7 @@ class Viewer(QWidget):
         try:
             # Fájlok generálása
             try:
-                ftp_service.convert_to_csv("datumok.txt", datumok_csv)
+                ftp_service.convert_to_csv(datumok_txt, datumok_csv)
             except Exception:
                 pass
 
@@ -708,7 +727,7 @@ class Viewer(QWidget):
             arrow_hand = getattr(Qt.CursorShape, 'ArrowCursor', getattr(Qt, 'ArrowCursor', None))
 
             self.event_markers = pg.ScatterPlotItem(
-                size=13,
+                size=event_marker_size,
                 pen=pg.mkPen(color='#00FFCC', width=1.5),
                 brush=pg.mkBrush(0, 255, 204, 150),
                 symbol=custom_pin,
@@ -883,7 +902,7 @@ class Viewer(QWidget):
                 else:
                     lbl.setText(f"Method: {method_text}")
                 # Színválasztás egyszerűsítve: szürke ha OFF, amúgy zöld
-                text_color = "#888888" if method_text == "OFF" else "#00FF00"
+                text_color = "#888888" if method_text == "OFF" else occurrence_marker_color
                 lbl.setStyleSheet(
                     f"font-weight: bold; color: {text_color}; background-color: #222; padding: 4px 8px; border-radius: 4px;")
 
@@ -950,9 +969,9 @@ class Viewer(QWidget):
                 wrapped_place = "<br>".join(textwrap.wrap(place, width=28))
 
                 html_text = f"""
-                <div style="color: #FF6666; font-family: monospace; font-size: 11pt; padding: 6px;">
+                <div style="color: #FF6666; font-family: monospace; font-size: {font_size}pt; padding: 6px;">
                     <b>[ EARTHQUAKE INFO ]</b><br>
-                    <table style="color: #FF6666; font-family: monospace; font-size: 11pt; border-collapse: collapse;">
+                    <table style="color: #FF6666; font-family: monospace; font-size: {font_size}pt; border-collapse: collapse;">
                         <tr>
                             <td style="vertical-align: top; padding-right: 10px;"><b>Event ID:</b></td>
                             <td style="vertical-align: top;"><b>{event_id}</b></td>
@@ -986,7 +1005,7 @@ class Viewer(QWidget):
                 """
             else:
                 html_text = f"""
-                <div style="color: #FFAA00; font-family: monospace; font-size: 11pt; font-weight: bold; padding: 6px;">
+                <div style="color: #FFAA00; font-family: monospace; font-size: {font_size}pt; font-weight: bold; padding: 6px;">
                     [ EARTHQUAKE INFO ]<br>
                     Target date: {target_dt.strftime('%Y.%m.%d. %H:%M:%S')}<br>
                     Earthquake not found
@@ -1332,8 +1351,8 @@ class Viewer(QWidget):
                 formatted_text = raw_text.replace('\n', '<br>')
 
                 html_text = f"""
-                <div style="color: #00FFCC; font-family: monospace; font-size: 9pt;">
-                    <b style="font-size: 10pt;">[ EVENT INFO ]</b><br>
+                <div style="color: #00FFCC; font-family: monospace; font-size: {font_size}pt;">
+                    <b style="font-size: {font_size + 1}pt;">[ EVENT INFO ]</b><br>
                     <b>Date: {clicked_event['date_str']}</b>
                     <hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">
                     <div style="line-height: 1.3;">{formatted_text}</div>
@@ -1399,7 +1418,7 @@ class Viewer(QWidget):
                 self.click_dot.setData(x=[exact_timestamp], y=[y_val_for_label])
 
                 html_text = f"""
-                <div style="color: #FFFF00; font-family: monospace; font-size: 11pt; font-weight: bold; padding: 5px;">
+                <div style="color: #FFFF00; font-family: monospace; font-size: {font_size}pt; font-weight: bold; padding: 5px;">
                     Index: {idx}<br>
                     Date: {date_str}<br>
                     Timestamp: {tmstmp_str}<br>

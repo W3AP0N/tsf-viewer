@@ -16,9 +16,9 @@ pip install pandas numpy pyqtgraph PyQt6 requests
 
 - Ezután helyezzük az upx.exe fájlt a projektmappába
 
-## Konfigurációs file (config.json)
+## Konfigurációs fájlok (ftp.json, config.toml)
 
-A program egy config.json nevű állományból olvassa ki a log fájlok eléréséhez szükséges FTP adatokat. Ezt a program helyes működéséhez csatolnunk kell a projektmappába.
+A program egy ftp.json nevű állományból olvassa ki a log fájlok eléréséhez szükséges FTP adatokat. Ezt a program helyes működéséhez csatolnunk kell a projektmappába.
 
 A JSON szerkezete:
 ```
@@ -36,6 +36,10 @@ A JSON szerkezete:
     }
 }
 ```
+
+Illetve van pár változó, aminek az értékét mi magunk is megadhatjuk.
+Ezeket a config.toml fájl átírásával tehetjük meg.
+
 ## Szükséges fájlok
 
 Ahoz hogy az EXE állományt el tudjuk készíteni, ezekre lesz szükség:
@@ -45,7 +49,8 @@ Ahoz hogy az EXE állományt el tudjuk készíteni, ezekre lesz szükség:
 - tsf_viewer.spec
 - icon.png
 - icon.ico
-- config.json
+- ftp.json
+- config.toml
 
 ## EXE legenerálása
 
