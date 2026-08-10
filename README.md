@@ -1,26 +1,26 @@
 # TSF Viewer
-## First steps
+## Alapfeltételek
 
-To run the script you will need:
+Ahoz hogy a scriptet futtatni lehessen szükséges:
 
-1. The latest Python version
+1. A legfrissebb python verzió
 
-2. The following packages:
+2. És a következő package-ek telepítése:
 
 ```bash
 pip install pandas numpy pyqtgraph PyQt6 requests
 ```
 
-3. UPX(Universal Packer for Executable) - Optional, for reduce the size of the EXE file.
-- You can download it from here: https://upx.github.io/
+3. UPX (Universal Packer for Executable) - Nem kötelező, a script futtatható állományának generálásánal ajánlott, mert drasztikusan csökkenti a végső file méretét.
+- Letöltés: https://upx.github.io/
 
-- Put upx.exe in the folder where are the .py files, or add it in the system PATH.
+- Ezután helyezzük az upx.exe fájlt a projektmappába
 
-## Configuration (config.json)
+## Konfigurációs file (config.json)
 
-The program uses a config.json file, which is located in the root folder, for the connection to the server and for the FTP settings
+A program egy config.json nevű állományból olvassa ki a log fájlok eléréséhez szükséges FTP adatokat. Ezt a program helyes működéséhez csatolnunk kell a projektmappába.
 
-Example:
+A JSON szerkezete:
 ```
 {
     "STATION1": {
@@ -36,9 +36,9 @@ Example:
     }
 }
 ```
-## The files needed to build:
+## Szükséges fájlok
 
-To build the EXE you need to have the following files in the project's root folder:
+Ahoz hogy az EXE állományt el tudjuk készíteni, ezekre lesz szükség:
 
 - tsf_viewer.py
 - ftp_service.py
@@ -47,16 +47,12 @@ To build the EXE you need to have the following files in the project's root fold
 - icon.ico
 - config.json
 
-## The EXE file
+## EXE legenerálása
 
-You can build the EXE file (Windows only) with PyInstaller and the tsf\_viewer.spec file.
-
-1. Open the terminal in the folder with the files
-2. Run the command:
-
-    ```bash
+A pyinstaller segítségével lehetséges. Ha még nem tettük meg, telepíthetjük az első paranncsal. Ha megvan, a második parancs végzi el az EXE elkészítését:
+ 
+   ```bash
+    pip install pyinstaller
     pyinstaller tsf_viewer.spec
-    ```
-3. When the process is complete, the EXE file will be in the /dist folder as TSF\_Viewer.exe
-
-If you have set upx=True in the .spec file, but you do not have upx.exe in the folder, PyInstaller will show a warning, and it will create a non-packed EXE file.
+   ```
+Ha a folyamat befejeződött, az EXE fájlt a /dist mappában találjuk TSF_Viewer.exe néven.
