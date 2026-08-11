@@ -5,8 +5,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('icon.png', '.'),
-        ('config.json', '.')
+        ('icon.png', '.')
     ],
     hiddenimports=[],
     hookspath=[],

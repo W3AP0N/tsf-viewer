@@ -68,9 +68,9 @@ event_marker_size = plot_config.get("event_marker_size", 13)
 occurrence_marker_color = plot_config.get("occurrence_marker_color", "#00FFF1")
 occurrence_marker_size =  plot_config.get("occurrence_marker_size", 8)
 
-
 path_config = config.get("path", {})
 datumok_txt = path_config.get("datumok_txt", "datumok.txt")
+ftp_json = path_config.get("ftp_json", "ftp.json")
 
 # =====================================================
 # Argumentumok kezelése és inicializálás
@@ -124,6 +124,9 @@ print(f"Sensor: {sensor}")
 
 if not os.path.exists(datumok_txt):
     print("WARNING: 'datumok.txt' is missing")
+
+if not os.path.exists(ftp_json):
+    print("WARNING: 'ftp.json' is missing")
 
 # =====================================================
 # Tengely azonosító segédfüggvény
@@ -382,8 +385,7 @@ class Viewer(QWidget):
 
     def _setup_ui(self):
         """Létrehozza az ablakot, a legördülő menüt, a gyorsgombokat és a gombsort."""
-        self.setWindowTitle("TSF Viewer - " + filename)
-        self.showMaximized()
+        self.setWindowTitle(f"TSF Viewer - {filename}")
         self.main_layout = QVBoxLayout(self)
 
         # Csatornaválasztó (ComboBox)
@@ -400,6 +402,7 @@ class Viewer(QWidget):
         QShortcut(QKeySequence("l"), self).activated.connect(self.toggle_gap_borders)
         QShortcut(QKeySequence("i"), self).activated.connect(self.toggle_event_label)
         QShortcut(QKeySequence("m"), self).activated.connect(self.toggle_method)
+        QShortcut(QKeySequence("Esc"), self).activated.connect(self.esc_clear)
 
         # === GOMBSOR LÉTREHOZÁSA ===
         btn_layout = QHBoxLayout()
@@ -1198,21 +1201,18 @@ class Viewer(QWidget):
 
         # Popup / Label láthatóságának vezérlése
         if popup:
-            if not show_markers and not show_lines:
-                # Ha minden jelölő és vonal rejtve van, a popupot is elrejtjük
-                popup.hide()
+            if is_multi_year:
+                # Többéves fájlnál a toggle állapota és az aktív esemény dönt
+                if not show_markers and not show_lines:
+                    popup.hide()
+                elif getattr(self, 'active_event_ts', None) is not None:
+                    popup.show()
             else:
-                # Ha újra láthatóvá válnak az elemek:
-                if is_multi_year:
-                    # Csak akkor jön vissza a popup, ha van aktív kiválasztott esemény
-                    if getattr(self, 'active_event_ts', None) is not None:
-                        popup.show()
+                # Egynapos fájlnál kizárólag a show_event_label változó dönt
+                if getattr(self, 'show_event_label', True):
+                    popup.show()
                 else:
-                    # Egynapos fájlnál a toggle állapota határozza meg
-                    if getattr(self, 'show_event_label', True):
-                        popup.show()
-                    else:
-                        popup.hide()
+                    popup.hide()
 
     def toggle_method(self):
         current_idx = getattr(self, 'current', 0)
@@ -1237,6 +1237,52 @@ class Viewer(QWidget):
             self.method_state = 2 if self.method_state == 0 else 0
 
         self.update_method_display()
+
+    def esc_clear(self):
+        """
+        Elrejti az összes aktív popup-ot a grafikonról esc billentyű lenyomására
+        """
+        # Index lekérdezés elrejtése
+        if hasattr(self, 'click_dot') and self.click_dot is not None:
+            try:
+                self.plot.removeItem(self.click_dot)
+            except Exception:
+                pass
+            self.click_dot = None
+
+        if hasattr(self, 'click_label') and self.click_label is not None:
+            try:
+                self.plot.plotItem.removeItem(self.click_label)
+            except Exception:
+                pass
+            self.click_label = None
+
+        if hasattr(self, 'clear_markers') and callable(self.clear_markers):
+            self.clear_markers()
+
+        # Event info elrejtése
+        popup = getattr(self, 'event_popup', None)
+        if popup is not None:
+            popup.hide()
+
+        # Earthquake info elrejtése
+        self.e_key_pressed = False  # E-gomb mód kikapcsolása
+        if hasattr(self, 'clear_earthquake') and callable(self.clear_earthquake):
+            self.clear_earthquake()  # Ha van külön földrengés törlő metódusod
+        elif hasattr(self, 'eq_item') and self.eq_item is not None:
+            try:
+                self.plot.removeItem(self.eq_item)
+            except Exception:
+                pass
+            self.eq_item = None
+
+        # Kijelölési állapotok (index, aktív esemény) alaphelyzetbe állítása
+        self.last_clicked_idx = None
+        self.active_event_ts = None
+
+        # Event markers pozícióinak frissítése
+        if hasattr(self, 'update_event_markers_position') and callable(self.update_event_markers_position):
+            self.update_event_markers_position()
 
     def reset(self):
         self.fit_view_to_data()
@@ -1589,6 +1635,6 @@ icon_path = resource_path("icon.png")
 if os.path.exists(icon_path):
     app.setWindowIcon(QIcon(icon_path))
 win = Viewer(station, sensor)
-win.show()
+win.showMaximized()
 
 sys.exit(app.exec())

@@ -10,8 +10,12 @@ with open("config.toml", "rb") as f:
 path_config = config.get("path", {})
 ftp_json = path_config.get("ftp_json", "ftp.json")
 
-with open(ftp_json, "r", encoding="utf-8") as f:
-    CONFIG = json.load(f)
+CONFIG = {}
+try:
+    with open(ftp_json, "r", encoding="utf-8") as f:
+        CONFIG = json.load(f)
+except FileNotFoundError:
+    pass
 
 # --- REGEX KONSTANSOK KIEMELÉSE ---
 # Csak egyszer fordul le a program indításakor, hatékonyabb.
