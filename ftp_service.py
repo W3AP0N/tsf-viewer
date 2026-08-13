@@ -1,8 +1,12 @@
 import re
+import os
+import sys
 import csv
 import json
 import tomllib
 from ftplib import FTP, all_errors
+
+os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__)))
 
 with open("config.toml", "rb") as f:
     config = tomllib.load(f)

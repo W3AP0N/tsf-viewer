@@ -33,8 +33,9 @@ from PyQt6.QtCore import Qt, QEvent
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from PyQt6.QtGui import QShortcut, QKeySequence, QIcon
-
 import ftp_service
+
+os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__)))
 
 # =====================================================
 # Globális hibakezelés
@@ -354,6 +355,7 @@ def _convert_tsf_to_h5(
 
 def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_size_limit):
     f_name = os.path.basename(path)
+    global is_h5
 
     # =========================================================================
     # 0. KÖZVETLEN HDF5 (.h5 / .tsf.h5) FÁJL BETÖLTÉSE
@@ -387,6 +389,20 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
             return np.array([]), np.empty((0, 0)), [], [], None, []
 
         return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
+
+    # =========================================================================
+    # 0/B. ELLENŐRZÉS: LÉTEZIK-E A PROJEKTMAPPÁBAN A LEGENERÁLT .TSF.H5 VÁLTOZAT?
+    # =========================================================================
+    h5_in_project = os.path.basename(path) + ".h5"  # pl. "adatok.tsf.h5" a projektmappában
+
+    if os.path.exists(h5_in_project):
+        is_h5 = True
+        return load_tsf(
+            path=h5_in_project,
+            handle_gaps=handle_gaps,
+            replace_9999=replace_9999,
+            size_limit_gb=size_limit_gb
+        )
 
     # =========================================================================
     # 1. FEJLÉC BEOLVASÁSA (NORMÁL .TSF FÁJL ESETÉN)
@@ -465,7 +481,6 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
 
         try:
             with animated_loading(f"Reading '{f_name}.h5'"):
-                global is_h5
                 is_h5 = True
                 h5f = h5py.File(h5_path, "r")
                 _OPEN_H5_FILES[h5_path] = h5f
@@ -626,8 +641,23 @@ class Viewer(QWidget):
 
         # --- 3. ESEMÉNYEK (EVENTS) LETÖLTÉSE ÉS FELDOLGOZÁSA ---
         events_dict = self._fetch_and_parse_events()
-        self._process_single_day_events(events_dict)
-        self._process_multi_year_events(events_dict)
+
+        # Keresünk egy 8-jegyű dátumot
+        date_match = re.search(r"\d{8}", base_name)
+
+        if date_match:
+            # Megnézzük a dátum utáni részt a fájlnévben
+            after_date = base_name[date_match.end():]
+
+            # Ha a 8-jegyű dátumot közvetlenül kötőjel követi (pl. 20260723-0724 vagy 20240202-20250813)
+            if after_date.startswith("-"):
+                self._process_multi_year_events(events_dict)
+            else:
+                # Sima, 1 napos dátum (pl. valami_20260723.tsf)
+                self._process_single_day_events(events_dict, base_name)
+        else:
+            # Ha egyáltalán nincs dátum a fájlnévben
+            self._process_multi_year_events(events_dict)
 
         # Döntés: ha BÁRMELYIK típusú esemény létezik, a gomb aktív lesz!
         has_single_day = getattr(self, 'show_event_label', False)
@@ -734,11 +764,13 @@ class Viewer(QWidget):
     # ------------------------------------------------------------------
     # Adatbetöltés és feldolgozás
     # ------------------------------------------------------------------
-    def _process_single_day_events(self, events):
+    def _process_single_day_events(self, events, base_name):
         """Kiválogatja az 1 napos nézethez tartozó eseményeket a fájlnév alapján."""
-        match = re.search(r"\d{8}", base_name)
+
+        # Szigorú illeszkedés: csak független 8 számjegy (körülötte nincs más számjegy vagy kötőjel)
+        match = re.search(r"(?<![\d-])\d{8}(?![\d-])", base_name)
         if not match:
-            print("No date in filename")
+            print("No single date in filename")
             return
 
         try:
@@ -754,7 +786,6 @@ class Viewer(QWidget):
 
         for date_str, event_text in events.items():
             try:
-                # Intervallum bontás egyszerűsítve
                 start_part, _, end_part = date_str.strip().partition("-")
                 start_part = start_part.strip().rstrip(".")
 
@@ -781,6 +812,8 @@ class Viewer(QWidget):
         print("Matching events found for this date")
         formatted_text = '<hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">'.join(
             matched_event_texts)
+
+        font_size = getattr(self, 'font_size', 10)
 
         html_text = f"""
         <div style="color: #00FFCC; font-family: monospace; font-size: {font_size}pt;">
@@ -810,6 +843,7 @@ class Viewer(QWidget):
 
     def _process_multi_year_events(self, events):
         """Kigyűjti a grafikonra pozicionálandó (többéves) eseményjelölőket."""
+        print("Multi day file detected")
         self.loaded_events = []
         if len(self.t_array) == 0: return
 
