@@ -44,7 +44,6 @@ Ahhoz hogy az EXE állományt el tudjuk készíteni, ezekre lesz szükségünk:
 - tsf_viewer.spec
 - icon.png
 - icon.ico
-- config.toml
 
 ## EXE legenerálása
 A pyinstaller segítségével lehetséges. Ha még nem tettük meg, telepíthetjük az első paranncsal. Ha megvan, a második parancs végzi el az EXE elkészítését:

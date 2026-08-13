@@ -255,7 +255,7 @@ def _convert_tsf_to_h5(
             file_size_bytes = os.path.getsize(tsf_path)
             estimated_chunks = round(file_size_bytes / (70 * 1024 * 1024))
             for chunk_idx, df in enumerate(df_iter):
-                sys.stdout.write(f"\rConverting: chunk {chunk_idx + 1} / ~{estimated_chunks}")
+                sys.stdout.write(f"\rConverting... chunk {chunk_idx + 1} / ~{estimated_chunks}")
                 sys.stdout.flush()
 
                 if df.empty:
@@ -1370,7 +1370,9 @@ class Viewer(QWidget):
         bottom_axis = self.plot.getAxis("bottom")
         bottom_axis.enableAutoSIPrefix(False)
 
-        self.plot.setLabel("left", self.ch_units[index])
+        # Aktualizáljuk a mértékegységet
+        current_unit = str(self.ch_units[index]) if index < len(self.ch_units) else ""
+        self.plot.setLabel("left", current_unit)
         self.plot.setLabel("bottom", "time")
 
         # 3. Nézet frissítése ELŐBB (beállítjuk az új csatorna Y-skáláját)
@@ -1382,17 +1384,19 @@ class Viewer(QWidget):
 
         # 4. Aktív jelölő (Sima kattintás VAGY Földrengés) frissítése az új csatorna Y-értékére
         if getattr(self, 'last_clicked_idx', None) is not None:
-            idx = self.last_clicked_idx
-            exact_timestamp = self.t_array[idx]
-            new_y = y[idx]
+            idx = int(self.last_clicked_idx)
+
+            # Explicit típuskonverzió (Windows / PySide C++ kompatibilitás)
+            exact_timestamp = float(self.t_array[idx])
+            new_y = float(y[idx])
             has_valid_y = not np.isnan(new_y)
 
             # =========================================================================
-            # A) HA FÖLDRENGÉS INFO VAN AKTIAN (is_earthquake_active == True)
+            # A) HA FÖLDRENGÉS INFO VAN AKTÍVAN (is_earthquake_active == True)
             # =========================================================================
             if getattr(self, 'is_earthquake_active', False):
                 vb = self.plot.plotItem.vb
-                y_max = vb.viewRange()[1][1]
+                y_max = float(vb.viewRange()[1][1])
                 pos_y = new_y if has_valid_y else y_max
 
                 # Piros pötty áthelyezése az új csatorna Y értékére
@@ -1406,6 +1410,7 @@ class Viewer(QWidget):
                 # Piros földrengés ablak áthelyezése az új Y pozícióra (szöveg marad!)
                 if getattr(self, 'click_label', None) is not None:
                     self.click_label.setPos(exact_timestamp, pos_y)
+                    self.click_label.update()
 
             # =========================================================================
             # B) HA SIMA ADATMINTA (sárga pötty + sárga label) VAN AKTÍVAN
@@ -1421,14 +1426,17 @@ class Viewer(QWidget):
 
                 # Címke HTML szövegének ÉS pozíciójának frissítése az új adatra + mértékegységre
                 if getattr(self, 'click_label', None) is not None:
-                    left_axis = self.plot.getAxis('left')
-                    y_label = left_axis.labelText
-                    y_unit = left_axis.labelUnits
-                    unit_display = f"{y_label} [{y_unit}]" if y_unit else (y_label or "Unit")
+                    # A tengely lekérdezése HELYETT közvetlenül az új csatorna mértékegységét használjuk!
+                    unit_display = current_unit if current_unit else "Value"
 
-                    dt = datetime.fromtimestamp(exact_timestamp)
-                    date_str = dt.strftime('%Y.%m.%d.')
-                    tmstmp_str = dt.strftime('%H:%M:%S.%f')[:-3]
+                    # Biztonságos időbélyeg formázás
+                    try:
+                        dt = datetime.fromtimestamp(exact_timestamp, tz=timezone.utc)
+                        date_str = dt.strftime('%Y.%m.%d.')
+                        tmstmp_str = dt.strftime('%H:%M:%S.%f')[:-3]
+                    except Exception:
+                        date_str = "N/A"
+                        tmstmp_str = f"{exact_timestamp:.3f}"
 
                     html_text = f"""
                     <div style="color: #FFFF00; font-family: monospace; font-size: {font_size}pt; font-weight: bold; padding: 5px;">
@@ -1441,6 +1449,10 @@ class Viewer(QWidget):
 
                     self.click_label.setHtml(html_text)
                     self.click_label.setPos(exact_timestamp, new_y)
+                    self.click_label.update()
+
+        # Kényszerített grafikon újrarajzolás Windows alatt
+        self.plot.update()
 
     def toggle_gap_borders(self):
         """
