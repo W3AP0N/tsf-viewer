@@ -330,7 +330,12 @@ def _convert_tsf_to_h5(
         os.rename(tmp_h5_path, h5_path)
 
         elapsed = time.time() - start_time
-        sys.stdout.write(f"\rConverting... Done! ({elapsed:.2f}s), {chunk_idx + 1} chunks as -> '{h5_path}'\n\n")
+        if elapsed >= 60:
+            mins, secs = divmod(elapsed, 60)
+            elapsed_str = f"{int(mins)}m{secs:06.3f}s"  # pl. 12m56.012s (ha 2 tizedes kell: secs:05.2f)
+        else:
+            elapsed_str = f"{elapsed:.3f}s"  # pl. 45.12s
+        sys.stdout.write(f"\rConverting... Done! ({elapsed_str}), {chunk_idx + 1} chunks as -> '{h5_path}'\n\n")
         sys.stdout.flush()
 
     except Exception as e:
