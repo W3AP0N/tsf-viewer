@@ -6,7 +6,7 @@ Ahhoz hogy a scriptet futtatni lehessen szükséges:
 2. És a következő package-ek telepítése:
 
 ```bash
-pip install pandas numpy pyqtgraph PyQt6 requests
+pip install pandas numpy pyqtgraph PyQt6 requests h5py
 ``` 
 
 3. UPX (Universal Packer for Executable) - Nem kötelező, a script futtatható állományának generálásánal ajánlott, mert drasztikusan csökkenti a végső fájl méretét.

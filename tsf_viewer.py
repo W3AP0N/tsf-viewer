@@ -5,10 +5,13 @@ import sys
 import csv
 import uuid
 import time
+import h5py
 import ctypes
+import signal
 import tomllib
 import requests
 import platform
+import warnings
 import threading
 import traceback
 import numpy as np
@@ -27,6 +30,7 @@ from PyQt6.QtWidgets import (
     QTextBrowser,
 )
 from PyQt6.QtCore import Qt, QEvent
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from PyQt6.QtGui import QShortcut, QKeySequence, QIcon
 
@@ -42,17 +46,23 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
     """
     # A Ctrl+C (KeyboardInterrupt) megszakítást hagyjuk simán lefutni
     if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
+        os._exit(0)  # Kényszerített, azonnali kilépés
 
     print("\n" + "=" * 60)
     print("CRITICAL ERROR:")
     print("=" * 60)
     traceback.print_exception(exc_type, exc_value, exc_traceback)
     print("=" * 60)
-    input()
+    input("\n\nPress ENTER to exit...")
+
+# CTRL + C egyből leáll a program
+def sigint_handler(signal_received, frame):
+    print()
+    os._exit(0)
 
 sys.excepthook = global_exception_handler
+signal.signal(signal.SIGINT, sigint_handler)
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="pyqtgraph")
 
 # =====================================================
 # Config file betöltése
@@ -61,16 +71,18 @@ with open("config.toml", "rb") as f:
     config = tomllib.load(f)
 
 plot_config = config.get("plot", {})
-
 font_size = plot_config.get("font_size", 10)
 line_width = plot_config.get("line_width", 3)
 event_marker_size = plot_config.get("event_marker_size", 13)
-occurrence_marker_color = plot_config.get("occurrence_marker_color", "#00FFF1")
+occurrence_marker_color = plot_config.get("occurrence_marker_color", "cyan")
 occurrence_marker_size =  plot_config.get("occurrence_marker_size", 8)
 
 path_config = config.get("path", {})
 datumok_txt = path_config.get("datumok_txt", "datumok.txt")
 ftp_json = path_config.get("ftp_json", "ftp.json")
+
+compression_config = config.get("compression", {})
+file_size_limit = compression_config.get("file_size_limit", 4)
 
 # =====================================================
 # Argumentumok kezelése és inicializálás
@@ -86,7 +98,7 @@ if len(sys.argv) < 2:
     if is_win:
         print("   Or drop a file on the .exe")
 
-    input()
+    input("\n\nPress ENTER to exit...")
     sys.exit(1)
 
 if is_win:
@@ -99,16 +111,23 @@ filepath = sys.argv[1]
 filename = os.path.basename(filepath)
 base_name, _ = os.path.splitext(filename)
 
-if not filename.lower().endswith(".tsf"):
-    print(f"ERROR: '{filename}' is not a .tsf file!")
-    input()
+is_h5 = False
+
+if not os.path.isfile(filepath):
+    print(f"ERROR: File does not exist '{filepath}'")
+    input("\n\nPress ENTER to exit...")
+    sys.exit(1)
+
+if not filename.lower().endswith((".tsf", ".tsf.h5")):
+    print(f"ERROR: '{filename}' is not a valid .tsf file!")
+    input("\n\nPress ENTER to exit...")
     sys.exit(1)
 
 if len(sys.argv) >= 3:
     filepath2 = sys.argv[2]
     if not filepath2.endswith(".earthquake.tsf"):
         print(f"ERROR: '{os.path.basename(filepath2)}' is not a .earthquake.tsf file!")
-        input()
+        input("\n\nPress ENTER to exit...")
         sys.exit(1)
 
 parts = base_name.split("_")
@@ -144,13 +163,226 @@ def get_axis(name):
 # =====================================================
 # Fájl betöltés
 # =====================================================
-def load_tsf(path, handle_gaps=False, replace_9999=False):
+@contextmanager
+def animated_loading(message):
+    """Egységes kontextuskezelő a töltési animációhoz és időméréshez."""
+    loading_stop = threading.Event()
+
+    def _animate():
+        dots = ("", ".", "..", "...")
+        idx = 0
+        while not loading_stop.is_set():
+            sys.stdout.write(f"\r{message}{dots[idx % 4]:<4}")
+            sys.stdout.flush()
+            idx += 1
+            time.sleep(0.3)
+
+    anim_thread = threading.Thread(target=_animate)
+    anim_thread.start()
+    start_time = time.time()
+
+    try:
+        yield
+    except Exception as e:
+        elapsed = time.time() - start_time
+        loading_stop.set()
+        anim_thread.join()
+        sys.stdout.write(f"\r{message}... FAILED! ({elapsed:.3f}s)\n")
+        sys.stdout.flush()
+        raise e
+    else:
+        elapsed = time.time() - start_time
+        loading_stop.set()
+        anim_thread.join()
+        sys.stdout.write(f"\r{message}... Done! ({elapsed:.3f}s)\n")
+        sys.stdout.flush()
+
+_OPEN_H5_FILES = {}
+
+def _convert_tsf_to_h5(
+    tsf_path: str,
+    h5_path: str,
+    channel_names: list[str],
+    units: list[str],
+    increment: float | None,
+    data_start_line: int,
+    handle_gaps: bool = False,
+    replace_9999: bool = False,
+    chunksize: int = 500_000,
+) -> None:
+    """Hatalmas TSF fájlok konvertálása HDF5 bináris formátumba darabokban (chunking)."""
+    tmp_h5_path = h5_path + ".tmp"
+    f_name = os.path.basename(tsf_path)
+    print(f"\n[INFO] '{f_name}' is too large and must be compressed.")
+    choice = input("Proceed? [Y/n]: ").strip().lower()
+
+    if choice not in ("y", "yes", ""):
+        print("[INFO] Operation cancelled.")
+        input("\n\nPress ENTER to exit...")
+        sys.exit(1)
+    start_time = time.time()
+
+    ch_count = len(channel_names)
+    all_gaps = []
+
+    try:
+        with h5py.File(tmp_h5_path, "w") as h5f:
+            # --- 1. Metaadatok mentése ---
+            h5f.attrs["channel_names"] = channel_names
+            h5f.attrs["units"] = units
+            h5f.attrs["increment"] = increment if increment is not None else np.nan
+
+            # --- 2. HDF5 dataset-ek inicializálása ---
+            dset_time = h5f.create_dataset(
+                "timestamps", shape=(0,), maxshape=(None,), dtype="float64", compression="lzf"
+            )
+            dset_data = h5f.create_dataset(
+                "data_matrix", shape=(0, ch_count), maxshape=(None, ch_count), dtype="float32", compression="lzf"
+            )
+
+            df_iter = pd.read_csv(
+                tsf_path,
+                skiprows=data_start_line,
+                sep=r"\s+",
+                header=None,
+                comment="[",
+                on_bad_lines="skip",
+                engine="c",
+                chunksize=chunksize,
+            )
+
+            # --- 3. Fájl feldolgozása darabokban (chunking) ---
+            file_size_bytes = os.path.getsize(tsf_path)
+            estimated_chunks = round(file_size_bytes / (70 * 1024 * 1024))
+            for chunk_idx, df in enumerate(df_iter):
+                sys.stdout.write(f"\rConverting: chunk {chunk_idx + 1} / ~{estimated_chunks}")
+                sys.stdout.flush()
+
+                if df.empty:
+                    continue
+
+                total_cols = df.shape[1]
+                time_cols = total_cols - ch_count
+                if time_cols < 6:
+                    continue
+
+                # --- 3.1. Timestamps (időbélyegek) kiszámítása ---
+                date_cols = {
+                    k: df.iloc[:, i].astype(int)
+                    for i, k in enumerate(["year", "month", "day", "hour", "minute", "second"])
+                }
+                dt_series = pd.to_datetime(date_cols)
+                if time_cols >= 7:
+                    dt_series += pd.to_timedelta(df.iloc[:, 6] * 1000, unit="us")
+
+                timestamps = (dt_series.astype("datetime64[ns]").astype("int64") / 1e9).to_numpy()
+
+                # --- 3.2. Adat mátrix kinyerése és típuskonverziója ---
+                try:
+                    data_matrix = df.iloc[:, time_cols:].to_numpy(dtype=np.float32)
+                except ValueError:
+                    data_matrix = df.iloc[:, time_cols:].apply(pd.to_numeric, errors="coerce").to_numpy(dtype=np.float32)
+
+                if data_matrix.ndim == 1:
+                    data_matrix = data_matrix.reshape(-1, 1)
+
+                # --- 3.3. Hibás adatok (9999.9 / >=9990) cseréje NaN-ra ---
+                if replace_9999:
+                    mask_9999 = np.isclose(data_matrix, 9999.9, atol=0.1) | (data_matrix >= 9990)
+                    data_matrix[mask_9999] = np.nan
+
+                # --- 3.4. Időbeli hézagok (gaps) kezelése ---
+                if handle_gaps and increment is not None and len(timestamps) > 1:
+                    limit = increment * 1.5
+                    gap_indices = np.where(np.diff(timestamps) > limit)[0]
+
+                    if len(gap_indices) > 0:
+                        insert_indices, insert_times, insert_rows = [], [], []
+                        nan_row = np.full(data_matrix.shape[1], np.nan, dtype=np.float32)
+
+                        for idx in gap_indices:
+                            t1, t2 = timestamps[idx], timestamps[idx + 1]
+                            all_gaps.append((t1, t2))
+                            insert_indices.extend([idx + 1, idx + 1])
+                            insert_times.extend([t1 + increment, t2 - increment])
+                            insert_rows.extend([nan_row, nan_row])
+
+                        timestamps = np.insert(timestamps, insert_indices, insert_times)
+                        data_matrix = np.insert(data_matrix, insert_indices, insert_rows, axis=0)
+
+                # --- 3.5. HDF5 dataset-ek átméretezése és az új adatok hozzáfűzése ---
+                curr_len = dset_time.shape[0]
+                new_len = curr_len + len(timestamps)
+
+                dset_time.resize(new_len, axis=0)
+                dset_data.resize(new_len, axis=0)
+
+                dset_time[curr_len:new_len] = timestamps
+                dset_data[curr_len:new_len] = data_matrix
+
+            # --- 4. Gaps dataset elmentése, ha volt hiányzó időtartam ---
+            if all_gaps:
+                h5f.create_dataset("gaps", data=np.array(all_gaps, dtype="float64"))
+
+        # --- 5. Ideiglenes fájl kicserélése a véglegesre ---
+        if os.path.exists(h5_path):
+            os.remove(h5_path)
+        os.rename(tmp_h5_path, h5_path)
+
+        elapsed = time.time() - start_time
+        sys.stdout.write(f"\rConverting... Done! ({elapsed:.2f}s), {chunk_idx + 1} chunks as -> '{h5_path}'\n\n")
+        sys.stdout.flush()
+
+    except Exception as e:
+        if os.path.exists(tmp_h5_path):
+            os.remove(tmp_h5_path)
+        print(f"\nERROR while converting to binary: {e}")
+        input("\n\nPress ENTER to exit...")
+        sys.exit(1)
+
+def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_size_limit):
+    f_name = os.path.basename(path)
+
+    # =========================================================================
+    # 0. KÖZVETLEN HDF5 (.h5 / .tsf.h5) FÁJL BETÖLTÉSE
+    # =========================================================================
+    if path.endswith(".tsf.h5") or path.endswith(".h5"):
+        if not os.path.exists(path):
+            print(f"ERROR: File does not exist '{path}'")
+            return np.array([]), np.empty((0, 0)), [], [], None, []
+
+        try:
+            with animated_loading(f"Reading '{f_name}'"):
+                h5f = h5py.File(path, "r")
+                _OPEN_H5_FILES[path] = h5f
+
+                timestamps = h5f["timestamps"][:]
+                data_matrix = h5f["data_matrix"][:]
+
+                raw_channels = h5f.attrs.get("channel_names", [])
+                channel_names = [c.decode("utf-8") if isinstance(c, bytes) else str(c) for c in raw_channels]
+
+                raw_units = h5f.attrs.get("units", [])
+                units = [u.decode("utf-8") if isinstance(u, bytes) else str(u) for u in raw_units]
+
+                inc_val = h5f.attrs.get("increment", np.nan)
+                increment_ret = float(inc_val) if not np.isnan(inc_val) else None
+
+                gaps_ret = list(h5f["gaps"][:]) if "gaps" in h5f else []
+
+        except Exception as e:
+            print(f"ERROR while reading HDF5 file: {e}")
+            return np.array([]), np.empty((0, 0)), [], [], None, []
+
+        return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
+
+    # =========================================================================
+    # 1. FEJLÉC BEOLVASÁSA (NORMÁL .TSF FÁJL ESETÉN)
+    # =========================================================================
     channel_names, units = [], []
     increment = None
     data_start_line = 0
-    f_name = os.path.basename(path)
 
-    # 1. Fejléc beolvasása
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
         mode = None
         for line_idx, line in enumerate(f):
@@ -176,21 +408,20 @@ def load_tsf(path, handle_gaps=False, replace_9999=False):
                 mode = None
                 continue
 
-            # Intelligens csatornanév kinyerés
             if mode == "channels":
                 raw_parts = [p.strip() for p in s.split(":") if p.strip()]
                 if not raw_parts:
                     continue
+
                 if len(raw_parts) == 1:
                     c_name = raw_parts[0]
                 else:
-                    cand_last, cand_second = raw_parts[-1], raw_parts[1]
-                    if get_axis(cand_last) is not None:
-                        c_name = cand_last
-                    elif get_axis(cand_second) is not None:
-                        c_name = cand_second
-                    else:
-                        c_name = cand_second
+                    c_name = raw_parts[1]
+                    if get_axis(raw_parts[-1]) is not None:
+                        c_name = raw_parts[-1]
+                    elif get_axis(raw_parts[1]) is not None:
+                        c_name = raw_parts[1]
+
                 channel_names.append(c_name)
             elif mode == "units":
                 units.append(s)
@@ -199,42 +430,61 @@ def load_tsf(path, handle_gaps=False, replace_9999=False):
     if data_start_line == 0:
         return empty_return
 
-    # 2. Adatblokk beolvasás animációval
-    loading_stop = threading.Event()
+    file_size_bytes = os.path.getsize(path)
+    file_size_gb = file_size_bytes / (1024 ** 3)
 
-    def _animate_loading():
-        dots = ("", ".", "..", "...")
-        idx = 0
-        while not loading_stop.is_set():
-            sys.stdout.write(f"\rReading '{f_name}'{dots[idx % 4]:<4}")
-            sys.stdout.flush()
-            idx += 1
-            time.sleep(0.3)
+    # =========================================================================
+    # A) NAGY FÁJL KEZELÉSE (> 4 GB) -> HDF5 BINÁRIS UTÓLAGOS BETÖLTÉS
+    # =========================================================================
+    if file_size_gb > size_limit_gb:
+        h5_path = os.path.basename(path) + ".h5"
 
-    anim_thread = threading.Thread(target=_animate_loading)
-    anim_thread.start()
-    start_time = time.time()
+        if not os.path.exists(h5_path):
+            _convert_tsf_to_h5(
+                tsf_path=path,
+                h5_path=h5_path,
+                channel_names=channel_names,
+                units=units,
+                increment=increment,
+                data_start_line=data_start_line,
+                handle_gaps=handle_gaps,
+                replace_9999=replace_9999,
+            )
 
+        try:
+            with animated_loading(f"Reading '{f_name}.h5'"):
+                global is_h5
+                is_h5 = True
+                h5f = h5py.File(h5_path, "r")
+                _OPEN_H5_FILES[h5_path] = h5f
+
+                timestamps = h5f["timestamps"][:]
+                data_matrix = h5f["data_matrix"][:]
+
+                inc_val = h5f.attrs.get("increment", np.nan)
+                increment_ret = float(inc_val) if not np.isnan(inc_val) else None
+
+                gaps_ret = list(h5f["gaps"][:]) if "gaps" in h5f else []
+
+        except Exception as e:
+            print(f"ERROR while reading HDF5 file: {e}")
+            return empty_return
+
+        return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
+
+    # =========================================================================
+    # B) KIS/KÖZEPES FÁJL KEZELÉSE (<= 4 GB)
+    # =========================================================================
     try:
-        df = pd.read_csv(
-            path, skiprows=data_start_line, sep=r"\s+", header=None, comment="[", on_bad_lines="skip", engine="c"
-        )
+        with animated_loading(f"Reading '{f_name}'"):
+            df = pd.read_csv(
+                path, skiprows=data_start_line, sep=r"\s+", header=None, comment="[", on_bad_lines="skip", engine="c"
+            )
     except Exception as e:
-        elapsed = time.time() - start_time
-        loading_stop.set()
-        anim_thread.join()
-        sys.stdout.write(f"\rReading '{f_name}'... FAILED! ({elapsed:.3f}s)\n")
-        sys.stdout.flush()
         print(f"ERROR while reading file: {e}")
         df = pd.DataFrame()
-        input()
+        input("\n\nPress ENTER to exit...")
         sys.exit(1)
-    else:
-        elapsed = time.time() - start_time
-        loading_stop.set()
-        anim_thread.join()
-        sys.stdout.write(f"\rReading '{f_name}'... Done! ({elapsed:.3f}s) \n")
-        sys.stdout.flush()
 
     if df.empty:
         return empty_return
@@ -245,7 +495,6 @@ def load_tsf(path, handle_gaps=False, replace_9999=False):
     if time_cols < 6:
         return empty_return
 
-    # 3. Vektorizált időkonverzió
     date_cols = {k: df[i].astype(int) for i, k in enumerate(["year", "month", "day", "hour", "minute", "second"])}
     dt_series = pd.to_datetime(date_cols)
     if time_cols >= 7:
@@ -265,7 +514,6 @@ def load_tsf(path, handle_gaps=False, replace_9999=False):
     if replace_9999:
         data_matrix[np.isclose(data_matrix, 9999.9, atol=0.1) | (data_matrix >= 9990)] = np.nan
 
-    # 4. Vektorizált gap kezelés
     gaps = []
     if handle_gaps and increment is not None and len(timestamps) > 1:
         limit = increment * 1.5
@@ -385,7 +633,10 @@ class Viewer(QWidget):
 
     def _setup_ui(self):
         """Létrehozza az ablakot, a legördülő menüt, a gyorsgombokat és a gombsort."""
-        self.setWindowTitle(f"TSF Viewer - {filename}")
+        if is_h5:
+            self.setWindowTitle(f"TSF Viewer - {filename}.h5")
+        else:
+            self.setWindowTitle(f"TSF Viewer - {filename}")
         self.main_layout = QVBoxLayout(self)
 
         # Csatornaválasztó (ComboBox)
@@ -399,7 +650,7 @@ class Viewer(QWidget):
 
         # Gyorsbillentyűk
         QShortcut(QKeySequence("r"), self).activated.connect(self.reset)
-        QShortcut(QKeySequence("l"), self).activated.connect(self.toggle_gap_borders)
+        QShortcut(QKeySequence("g"), self).activated.connect(self.toggle_gap_borders)
         QShortcut(QKeySequence("i"), self).activated.connect(self.toggle_event_label)
         QShortcut(QKeySequence("m"), self).activated.connect(self.toggle_method)
         QShortcut(QKeySequence("Esc"), self).activated.connect(self.esc_clear)
@@ -416,7 +667,7 @@ class Viewer(QWidget):
             return btn
 
         self.btn_reset = _create_btn("[R] Reset view", self.reset)
-        self.btn_gaps = _create_btn("[L] Show/hide gap boarders", self.toggle_gap_borders)
+        self.btn_gaps = _create_btn("[G] Show/hide gap boarders", self.toggle_gap_borders)
         self.btn_events = _create_btn("[I] Show/hide event(s)", self.toggle_event_label)
         self.btn_method = _create_btn("[M] Toggle Method", self.toggle_method, enabled=False)
         self.btn_ch = _create_btn("[A-Z] Quick channel select", None, enabled=False)
@@ -934,6 +1185,7 @@ class Viewer(QWidget):
 
             diffs = np.abs(t_array - clicked_x)
             idx = int(np.nanargmin(diffs)) if not np.isnan(diffs).all() else 0
+            self.last_clicked_idx = idx
 
             exact_timestamp = t_array[idx]
             y_val_for_label = d_array[idx, curr_channel]
@@ -1121,27 +1373,74 @@ class Viewer(QWidget):
         self.plot.setLabel("left", self.ch_units[index])
         self.plot.setLabel("bottom", "time")
 
-        # 3. Aktív kattintási pont frissítése az új csatorna görbéjén
-        if getattr(self, 'last_clicked_idx', None) is not None:
-            idx = self.last_clicked_idx
-            new_x = self.t_array[idx]
-            new_y = y[idx]
-
-            if getattr(self, 'click_dot', None) is not None:
-                try:
-                    self.click_dot.setData([new_x], [new_y])
-                except AttributeError:
-                    self.click_dot.setPos(new_x, new_y)
-
-            if getattr(self, 'click_label', None) is not None:
-                self.click_label.setPos(new_x, new_y)
-
-        # 4. Nézet és eseményjelölők frissítése
+        # 3. Nézet frissítése ELŐBB (beállítjuk az új csatorna Y-skáláját)
         if hasattr(self, 'fit_view_to_data'):
             self.fit_view_to_data()
 
         if hasattr(self, 'update_event_markers'):
             self.update_event_markers()
+
+        # 4. Aktív jelölő (Sima kattintás VAGY Földrengés) frissítése az új csatorna Y-értékére
+        if getattr(self, 'last_clicked_idx', None) is not None:
+            idx = self.last_clicked_idx
+            exact_timestamp = self.t_array[idx]
+            new_y = y[idx]
+            has_valid_y = not np.isnan(new_y)
+
+            # =========================================================================
+            # A) HA FÖLDRENGÉS INFO VAN AKTIAN (is_earthquake_active == True)
+            # =========================================================================
+            if getattr(self, 'is_earthquake_active', False):
+                vb = self.plot.plotItem.vb
+                y_max = vb.viewRange()[1][1]
+                pos_y = new_y if has_valid_y else y_max
+
+                # Piros pötty áthelyezése az új csatorna Y értékére
+                if getattr(self, 'click_dot', None) is not None:
+                    if has_valid_y:
+                        self.click_dot.setData(x=[exact_timestamp], y=[new_y])
+                        self.click_dot.show()
+                    else:
+                        self.click_dot.hide()
+
+                # Piros földrengés ablak áthelyezése az új Y pozícióra (szöveg marad!)
+                if getattr(self, 'click_label', None) is not None:
+                    self.click_label.setPos(exact_timestamp, pos_y)
+
+            # =========================================================================
+            # B) HA SIMA ADATMINTA (sárga pötty + sárga label) VAN AKTÍVAN
+            # =========================================================================
+            else:
+                # Sárga pötty áthelyezése
+                if getattr(self, 'click_dot', None) is not None:
+                    if has_valid_y:
+                        self.click_dot.setData(x=[exact_timestamp], y=[new_y])
+                        self.click_dot.show()
+                    else:
+                        self.click_dot.hide()
+
+                # Címke HTML szövegének ÉS pozíciójának frissítése az új adatra + mértékegységre
+                if getattr(self, 'click_label', None) is not None:
+                    left_axis = self.plot.getAxis('left')
+                    y_label = left_axis.labelText
+                    y_unit = left_axis.labelUnits
+                    unit_display = f"{y_label} [{y_unit}]" if y_unit else (y_label or "Unit")
+
+                    dt = datetime.fromtimestamp(exact_timestamp)
+                    date_str = dt.strftime('%Y.%m.%d.')
+                    tmstmp_str = dt.strftime('%H:%M:%S.%f')[:-3]
+
+                    html_text = f"""
+                    <div style="color: #FFFF00; font-family: monospace; font-size: {font_size}pt; font-weight: bold; padding: 5px;">
+                        Index: {idx}<br>
+                        Date: {date_str}<br>
+                        Timestamp: {tmstmp_str}<br>
+                        {unit_display}: {new_y:.4f}
+                    </div>
+                    """
+
+                    self.click_label.setHtml(html_text)
+                    self.click_label.setPos(exact_timestamp, new_y)
 
     def toggle_gap_borders(self):
         """
