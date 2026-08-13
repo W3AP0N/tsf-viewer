@@ -168,6 +168,13 @@ def animated_loading(message):
     """Egységes kontextuskezelő a töltési animációhoz és időméréshez."""
     loading_stop = threading.Event()
 
+    def _format_time(seconds: float) -> str:
+        """Segédfüggvény az idő formázására (1 perc felett XmYY.YYYs formátum)."""
+        if seconds >= 60:
+            mins, secs = divmod(seconds, 60)
+            return f"{int(mins)}m{secs:06.3f}s"
+        return f"{seconds:.3f}s"
+
     def _animate():
         dots = ("", ".", "..", "...")
         idx = 0
@@ -187,14 +194,14 @@ def animated_loading(message):
         elapsed = time.time() - start_time
         loading_stop.set()
         anim_thread.join()
-        sys.stdout.write(f"\r{message}... FAILED! ({elapsed:.3f}s)\n")
+        sys.stdout.write(f"\r{message}... FAILED! ({_format_time(elapsed)})\n")
         sys.stdout.flush()
         raise e
     else:
         elapsed = time.time() - start_time
         loading_stop.set()
         anim_thread.join()
-        sys.stdout.write(f"\r{message}... Done! ({elapsed:.3f}s)\n")
+        sys.stdout.write(f"\r{message}... Done! ({_format_time(elapsed)})\n")
         sys.stdout.flush()
 
 _OPEN_H5_FILES = {}
