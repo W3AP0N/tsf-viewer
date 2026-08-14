@@ -108,7 +108,7 @@ def compute_timestamps(df_time_cols: pd.DataFrame) -> np.ndarray:
     return timestamps
 
 # =====================================================
-# Konvertáló főfüggvény (OPTIMALIZÁLT)
+# Konvertáló főfüggvény
 # =====================================================
 def convert_tsf_to_h5(
         tsf_path: str,
@@ -211,77 +211,71 @@ def convert_tsf_to_h5(
                 chunks=(100_000, ch_count),
             )
 
-            # Megnyitjuk a fájlt stream olvasásra
-            with open(tsf_path, "r", encoding="utf-8", errors="ignore") as f:
+            df_iter = pd.read_csv(
+                tsf_path,
+                sep=r"\s+",
+                header=None,
+                skiprows=data_start_line,
+                on_bad_lines="skip",
+                encoding_errors="ignore",
+                engine="c",
+                chunksize=chunksize,
+            )
 
-                # Kézzel átugorjuk a fejlécet, így a pandas azonnal az adatokkal kezd
-                for _ in range(data_start_line):
-                    f.readline()
+            # 3. Feldolgozás darabokban
+            for chunk_idx, df in enumerate(df_iter):
+                sys.stdout.write(f"\rConverting '{f_name}'... chunk {chunk_idx + 1} / ~{estimated_chunks}")
+                sys.stdout.flush()
 
-                # A nyitott fájlobjektumot adjuk át, a C engine-nel. Nulla várakozási idő!
-                df_iter = pd.read_csv(
-                    f,
-                    sep=r"\s+",
-                    header=None,
-                    on_bad_lines="skip",
-                    engine="c",
-                    chunksize=chunksize,
-                )
+                if df.empty:
+                    continue
 
-                # 3. Feldolgozás darabokban
-                for chunk_idx, df in enumerate(df_iter):
-                    sys.stdout.write(f"\rConverting '{f_name}'... chunk {chunk_idx + 1} / ~{estimated_chunks}")
-                    sys.stdout.flush()
+                total_cols = df.shape[1]
+                time_cols = total_cols - ch_count
+                if time_cols < 6:
+                    continue
 
-                    if df.empty:
-                        continue
+                # 3.1. Timestamps (Szupergyors NumPy konverzió)
+                timestamps = compute_timestamps(df.iloc[:, :time_cols])
 
-                    total_cols = df.shape[1]
-                    time_cols = total_cols - ch_count
-                    if time_cols < 6:
-                        continue
+                # 3.2. Adat mátrix
+                data_matrix = df.iloc[:, time_cols:].to_numpy(dtype=np.float32)
 
-                    # 3.1. Timestamps (Szupergyors NumPy konverzió)
-                    timestamps = compute_timestamps(df.iloc[:, :time_cols])
+                if data_matrix.ndim == 1:
+                    data_matrix = data_matrix.reshape(-1, 1)
 
-                    # 3.2. Adat mátrix
-                    data_matrix = df.iloc[:, time_cols:].to_numpy(dtype=np.float32)
+                # 3.3. Hibás adatok cseréje
+                if replace_9999:
+                    data_matrix[data_matrix >= 9990.0] = np.nan
 
-                    if data_matrix.ndim == 1:
-                        data_matrix = data_matrix.reshape(-1, 1)
+                # 3.4. Időbeli hézagok kezelése
+                if handle_gaps and increment is not None and len(timestamps) > 1:
+                    limit = increment * 1.5
+                    gap_indices = np.where(np.diff(timestamps) > limit)[0]
 
-                    # 3.3. Hibás adatok cseréje
-                    if replace_9999:
-                        data_matrix[data_matrix >= 9990.0] = np.nan
+                    if len(gap_indices) > 0:
+                        insert_indices, insert_times, insert_rows = [], [], []
+                        nan_row = np.full(data_matrix.shape[1], np.nan, dtype=np.float32)
 
-                    # 3.4. Időbeli hézagok kezelése
-                    if handle_gaps and increment is not None and len(timestamps) > 1:
-                        limit = increment * 1.5
-                        gap_indices = np.where(np.diff(timestamps) > limit)[0]
+                        for idx in gap_indices:
+                            t1, t2 = timestamps[idx], timestamps[idx + 1]
+                            all_gaps.append((t1, t2))
+                            insert_indices.extend([idx + 1, idx + 1])
+                            insert_times.extend([t1 + increment, t2 - increment])
+                            insert_rows.extend([nan_row, nan_row])
 
-                        if len(gap_indices) > 0:
-                            insert_indices, insert_times, insert_rows = [], [], []
-                            nan_row = np.full(data_matrix.shape[1], np.nan, dtype=np.float32)
+                        timestamps = np.insert(timestamps, insert_indices, insert_times)
+                        data_matrix = np.insert(data_matrix, insert_indices, insert_rows, axis=0)
 
-                            for idx in gap_indices:
-                                t1, t2 = timestamps[idx], timestamps[idx + 1]
-                                all_gaps.append((t1, t2))
-                                insert_indices.extend([idx + 1, idx + 1])
-                                insert_times.extend([t1 + increment, t2 - increment])
-                                insert_rows.extend([nan_row, nan_row])
+                # 3.5. Mentés HDF5-be
+                curr_len = dset_time.shape[0]
+                new_len = curr_len + len(timestamps)
 
-                            timestamps = np.insert(timestamps, insert_indices, insert_times)
-                            data_matrix = np.insert(data_matrix, insert_indices, insert_rows, axis=0)
+                dset_time.resize(new_len, axis=0)
+                dset_data.resize(new_len, axis=0)
 
-                    # 3.5. Mentés HDF5-be
-                    curr_len = dset_time.shape[0]
-                    new_len = curr_len + len(timestamps)
-
-                    dset_time.resize(new_len, axis=0)
-                    dset_data.resize(new_len, axis=0)
-
-                    dset_time[curr_len:new_len] = timestamps
-                    dset_data[curr_len:new_len] = data_matrix
+                dset_time[curr_len:new_len] = timestamps
+                dset_data[curr_len:new_len] = data_matrix
 
             if all_gaps:
                 h5f.create_dataset("gaps", data=np.array(all_gaps, dtype="float64"))
