@@ -193,10 +193,13 @@ def convert_tsf_to_h5(
             h5f.attrs["units"] = units
             h5f.attrs["increment"] = increment if increment is not None else np.nan
 
-            # 2. Dataset-ek inicializálása explicit chunkinggal
+            # ----- ELŐRE ALLOKÁLÁS -----
+            # Rárakunk 10% puffert a becsült sorszámra a hézagok (gaps) miatt
+            max_expected_rows = int(estimated_lines * 1.1) + 1_000_000
+
             dset_time = h5f.create_dataset(
                 "timestamps",
-                shape=(0,),
+                shape=(max_expected_rows,),
                 maxshape=(None,),
                 dtype="float64",
                 compression="lzf",
@@ -204,78 +207,91 @@ def convert_tsf_to_h5(
             )
             dset_data = h5f.create_dataset(
                 "data_matrix",
-                shape=(0, ch_count),
+                shape=(max_expected_rows, ch_count),
                 maxshape=(None, ch_count),
                 dtype="float32",
                 compression="lzf",
                 chunks=(100_000, ch_count),
             )
 
-            df_iter = pd.read_csv(
-                tsf_path,
-                sep=r"\s+",
-                header=None,
-                skiprows=data_start_line,
-                on_bad_lines="skip",
-                encoding_errors="ignore",
-                engine="c",
-                chunksize=chunksize,
-            )
+            # Megnyitjuk a fájlt (a kedvenc/gyors beolvasási módszereddel)
+            with open(tsf_path, "r", encoding="utf-8", errors="ignore") as f:
+                for _ in range(data_start_line):
+                    f.readline()
 
-            # 3. Feldolgozás darabokban
-            for chunk_idx, df in enumerate(df_iter):
-                sys.stdout.write(f"\rConverting '{f_name}'... chunk {chunk_idx + 1} / ~{estimated_chunks}")
-                sys.stdout.flush()
+                df_iter = pd.read_csv(
+                    f,
+                    sep=r"\s+",
+                    header=None,
+                    on_bad_lines="skip",
+                    engine="c",
+                    chunksize=chunksize,
+                )
 
-                if df.empty:
-                    continue
+                current_row_idx = 0  # Nyomon követjük, hol tartunk a HDF5-ben
 
-                total_cols = df.shape[1]
-                time_cols = total_cols - ch_count
-                if time_cols < 6:
-                    continue
+                # 3. Feldolgozás darabokban
+                for chunk_idx, df in enumerate(df_iter):
+                    sys.stdout.write(f"\rConverting '{f_name}'... chunk {chunk_idx + 1} / ~{estimated_chunks}")
+                    sys.stdout.flush()
 
-                # 3.1. Timestamps (Szupergyors NumPy konverzió)
-                timestamps = compute_timestamps(df.iloc[:, :time_cols])
+                    if df.empty:
+                        continue
 
-                # 3.2. Adat mátrix
-                data_matrix = df.iloc[:, time_cols:].to_numpy(dtype=np.float32)
+                    total_cols = df.shape[1]
+                    time_cols = total_cols - ch_count
+                    if time_cols < 6:
+                        continue
 
-                if data_matrix.ndim == 1:
-                    data_matrix = data_matrix.reshape(-1, 1)
+                    # 3.1. Timestamps
+                    timestamps = compute_timestamps(df.iloc[:, :time_cols])
 
-                # 3.3. Hibás adatok cseréje
-                if replace_9999:
-                    data_matrix[data_matrix >= 9990.0] = np.nan
+                    # 3.2. Adat mátrix
+                    data_matrix = df.iloc[:, time_cols:].to_numpy(dtype=np.float32)
+                    if data_matrix.ndim == 1:
+                        data_matrix = data_matrix.reshape(-1, 1)
 
-                # 3.4. Időbeli hézagok kezelése
-                if handle_gaps and increment is not None and len(timestamps) > 1:
-                    limit = increment * 1.5
-                    gap_indices = np.where(np.diff(timestamps) > limit)[0]
+                    # 3.3. Hibás adatok cseréje
+                    if replace_9999:
+                        data_matrix[data_matrix >= 9990.0] = np.nan
 
-                    if len(gap_indices) > 0:
-                        insert_indices, insert_times, insert_rows = [], [], []
-                        nan_row = np.full(data_matrix.shape[1], np.nan, dtype=np.float32)
+                    # 3.4. Időbeli hézagok kezelése (változatlan)
+                    if handle_gaps and increment is not None and len(timestamps) > 1:
+                        limit = increment * 1.5
+                        gap_indices = np.where(np.diff(timestamps) > limit)[0]
 
-                        for idx in gap_indices:
-                            t1, t2 = timestamps[idx], timestamps[idx + 1]
-                            all_gaps.append((t1, t2))
-                            insert_indices.extend([idx + 1, idx + 1])
-                            insert_times.extend([t1 + increment, t2 - increment])
-                            insert_rows.extend([nan_row, nan_row])
+                        if len(gap_indices) > 0:
+                            insert_indices, insert_times, insert_rows = [], [], []
+                            nan_row = np.full(data_matrix.shape[1], np.nan, dtype=np.float32)
 
-                        timestamps = np.insert(timestamps, insert_indices, insert_times)
-                        data_matrix = np.insert(data_matrix, insert_indices, insert_rows, axis=0)
+                            for idx in gap_indices:
+                                t1, t2 = timestamps[idx], timestamps[idx + 1]
+                                all_gaps.append((t1, t2))
+                                insert_indices.extend([idx + 1, idx + 1])
+                                insert_times.extend([t1 + increment, t2 - increment])
+                                insert_rows.extend([nan_row, nan_row])
 
-                # 3.5. Mentés HDF5-be
-                curr_len = dset_time.shape[0]
-                new_len = curr_len + len(timestamps)
+                            timestamps = np.insert(timestamps, insert_indices, insert_times)
+                            data_matrix = np.insert(data_matrix, insert_indices, insert_rows, axis=0)
 
-                dset_time.resize(new_len, axis=0)
-                dset_data.resize(new_len, axis=0)
+                    # 3.5. Mentés HDF5-be (NINCS RESIZE CIKLUSONKÉNT!)
+                    new_len = current_row_idx + len(timestamps)
 
-                dset_time[curr_len:new_len] = timestamps
-                dset_data[curr_len:new_len] = data_matrix
+                    # Ha véletlenül kicsi lett volna az előre lefoglalt hely (nagyon ritka)
+                    if new_len > dset_time.shape[0]:
+                        dset_time.resize(new_len + 1_000_000, axis=0)
+                        dset_data.resize(new_len + 1_000_000, axis=0)
+
+                    # Adatok beírása az előre lefoglalt helyre
+                    dset_time[current_row_idx:new_len] = timestamps
+                    dset_data[current_row_idx:new_len] = data_matrix
+
+                    current_row_idx = new_len
+
+            # ----- CIKLUS VÉGE -----
+            # Legvégül egyszer átméretezzük (visszavágjuk) a datasetet a TÉNYLEGES méretre
+            dset_time.resize(current_row_idx, axis=0)
+            dset_data.resize(current_row_idx, axis=0)
 
             if all_gaps:
                 h5f.create_dataset("gaps", data=np.array(all_gaps, dtype="float64"))
