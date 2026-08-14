@@ -1,3 +1,6 @@
+from tsf_converter import convert_tsf_to_h5
+import ftp_service
+
 import os
 import io
 import re
@@ -33,7 +36,6 @@ from PyQt6.QtCore import Qt, QEvent
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from PyQt6.QtGui import QShortcut, QKeySequence, QIcon
-import ftp_service
 
 os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__)))
 
@@ -207,152 +209,6 @@ def animated_loading(message):
 
 _OPEN_H5_FILES = {}
 
-def _convert_tsf_to_h5(
-    tsf_path: str,
-    h5_path: str,
-    channel_names: list[str],
-    units: list[str],
-    increment: float | None,
-    data_start_line: int,
-    handle_gaps: bool = False,
-    replace_9999: bool = False,
-    chunksize: int = 500_000,
-) -> None:
-    """Hatalmas TSF fájlok konvertálása HDF5 bináris formátumba darabokban (chunking)."""
-    tmp_h5_path = h5_path + ".tmp"
-    f_name = os.path.basename(tsf_path)
-    print(f"\n[INFO] '{f_name}' is too large and must be compressed.")
-    choice = input("Proceed? [Y/n]: ").strip().lower()
-
-    if choice not in ("y", "yes", ""):
-        print("[INFO] Operation cancelled.")
-        input("\n\nPress ENTER to exit...")
-        sys.exit(1)
-    start_time = time.time()
-
-    ch_count = len(channel_names)
-    all_gaps = []
-
-    try:
-        with h5py.File(tmp_h5_path, "w") as h5f:
-            # --- 1. Metaadatok mentése ---
-            h5f.attrs["channel_names"] = channel_names
-            h5f.attrs["units"] = units
-            h5f.attrs["increment"] = increment if increment is not None else np.nan
-
-            # --- 2. HDF5 dataset-ek inicializálása ---
-            dset_time = h5f.create_dataset(
-                "timestamps", shape=(0,), maxshape=(None,), dtype="float64", compression="lzf"
-            )
-            dset_data = h5f.create_dataset(
-                "data_matrix", shape=(0, ch_count), maxshape=(None, ch_count), dtype="float32", compression="lzf"
-            )
-
-            df_iter = pd.read_csv(
-                tsf_path,
-                skiprows=data_start_line,
-                sep=r"\s+",
-                header=None,
-                comment="[",
-                on_bad_lines="skip",
-                engine="c",
-                chunksize=chunksize,
-            )
-
-            # --- 3. Fájl feldolgozása darabokban (chunking) ---
-            file_size_bytes = os.path.getsize(tsf_path)
-            estimated_chunks = round(file_size_bytes / (70 * 1024 * 1024))
-            for chunk_idx, df in enumerate(df_iter):
-                sys.stdout.write(f"\rConverting... chunk {chunk_idx + 1} / ~{estimated_chunks}")
-                sys.stdout.flush()
-
-                if df.empty:
-                    continue
-
-                total_cols = df.shape[1]
-                time_cols = total_cols - ch_count
-                if time_cols < 6:
-                    continue
-
-                # --- 3.1. Timestamps (időbélyegek) kiszámítása ---
-                date_cols = {
-                    k: df.iloc[:, i].astype(int)
-                    for i, k in enumerate(["year", "month", "day", "hour", "minute", "second"])
-                }
-                dt_series = pd.to_datetime(date_cols)
-                if time_cols >= 7:
-                    dt_series += pd.to_timedelta(df.iloc[:, 6] * 1000, unit="us")
-
-                timestamps = (dt_series.astype("datetime64[ns]").astype("int64") / 1e9).to_numpy()
-
-                # --- 3.2. Adat mátrix kinyerése és típuskonverziója ---
-                try:
-                    data_matrix = df.iloc[:, time_cols:].to_numpy(dtype=np.float32)
-                except ValueError:
-                    data_matrix = df.iloc[:, time_cols:].apply(pd.to_numeric, errors="coerce").to_numpy(dtype=np.float32)
-
-                if data_matrix.ndim == 1:
-                    data_matrix = data_matrix.reshape(-1, 1)
-
-                # --- 3.3. Hibás adatok (9999.9 / >=9990) cseréje NaN-ra ---
-                if replace_9999:
-                    mask_9999 = np.isclose(data_matrix, 9999.9, atol=0.1) | (data_matrix >= 9990)
-                    data_matrix[mask_9999] = np.nan
-
-                # --- 3.4. Időbeli hézagok (gaps) kezelése ---
-                if handle_gaps and increment is not None and len(timestamps) > 1:
-                    limit = increment * 1.5
-                    gap_indices = np.where(np.diff(timestamps) > limit)[0]
-
-                    if len(gap_indices) > 0:
-                        insert_indices, insert_times, insert_rows = [], [], []
-                        nan_row = np.full(data_matrix.shape[1], np.nan, dtype=np.float32)
-
-                        for idx in gap_indices:
-                            t1, t2 = timestamps[idx], timestamps[idx + 1]
-                            all_gaps.append((t1, t2))
-                            insert_indices.extend([idx + 1, idx + 1])
-                            insert_times.extend([t1 + increment, t2 - increment])
-                            insert_rows.extend([nan_row, nan_row])
-
-                        timestamps = np.insert(timestamps, insert_indices, insert_times)
-                        data_matrix = np.insert(data_matrix, insert_indices, insert_rows, axis=0)
-
-                # --- 3.5. HDF5 dataset-ek átméretezése és az új adatok hozzáfűzése ---
-                curr_len = dset_time.shape[0]
-                new_len = curr_len + len(timestamps)
-
-                dset_time.resize(new_len, axis=0)
-                dset_data.resize(new_len, axis=0)
-
-                dset_time[curr_len:new_len] = timestamps
-                dset_data[curr_len:new_len] = data_matrix
-
-            # --- 4. Gaps dataset elmentése, ha volt hiányzó időtartam ---
-            if all_gaps:
-                h5f.create_dataset("gaps", data=np.array(all_gaps, dtype="float64"))
-
-        # --- 5. Ideiglenes fájl kicserélése a véglegesre ---
-        if os.path.exists(h5_path):
-            os.remove(h5_path)
-        os.rename(tmp_h5_path, h5_path)
-
-        elapsed = time.time() - start_time
-        if elapsed >= 60:
-            mins, secs = divmod(elapsed, 60)
-            elapsed_str = f"{int(mins)}m{secs:06.3f}s"  # pl. 12m56.012s (ha 2 tizedes kell: secs:05.2f)
-        else:
-            elapsed_str = f"{elapsed:.3f}s"  # pl. 45.12s
-        sys.stdout.write(f"\rConverting... Done! ({elapsed_str}), {chunk_idx + 1} chunks as -> '{h5_path}'\n\n")
-        sys.stdout.flush()
-
-    except Exception as e:
-        if os.path.exists(tmp_h5_path):
-            os.remove(tmp_h5_path)
-        print(f"\nERROR while converting to binary: {e}")
-        input("\n\nPress ENTER to exit...")
-        sys.exit(1)
-
 def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_size_limit):
     f_name = os.path.basename(path)
     global is_h5
@@ -468,7 +324,7 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
         h5_path = os.path.basename(path) + ".h5"
 
         if not os.path.exists(h5_path):
-            _convert_tsf_to_h5(
+            convert_tsf_to_h5(
                 tsf_path=path,
                 h5_path=h5_path,
                 channel_names=channel_names,
@@ -476,7 +332,7 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
                 increment=increment,
                 data_start_line=data_start_line,
                 handle_gaps=handle_gaps,
-                replace_9999=replace_9999,
+                replace_9999=True,
             )
 
         try:

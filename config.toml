@@ -35,4 +35,4 @@ ftp_json = "ftp.json"
 # után a program automatikusan megkérdezi, hogy kívánjuk-e tömöríteni.
 
 # Alapértelmezett érték: 4
-file_size_limit = 4
+file_size_limit = 0
