@@ -6,6 +6,8 @@ import h5py
 import numpy as np
 import pandas as pd
 
+os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__)))
+
 # =====================================================
 # Segédfüggvények
 # =====================================================
@@ -127,7 +129,7 @@ def convert_tsf_to_h5(
 
     if ask_confirmation:
         print(f"\n[INFO] '{f_name}' is too large and must be compressed.")
-        choice = input("Proceed? [Y/n]: ").strip().lower()
+        choice = input("[INFO] Proceed? [Y/n]: ").strip().lower()
 
         if choice not in ("y", "yes", ""):
             print("[INFO] Operation cancelled.")

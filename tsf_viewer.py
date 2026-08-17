@@ -9,6 +9,8 @@ import csv
 import uuid
 import time
 import h5py
+import gzip
+import base64
 import ctypes
 import signal
 import tomllib
@@ -68,17 +70,40 @@ signal.signal(signal.SIGINT, sigint_handler)
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="pyqtgraph")
 
 # =====================================================
-# Config file betöltése
+# Config fájl betöltése
 # =====================================================
-with open("config.toml", "rb") as f:
-    config = tomllib.load(f)
+if os.path.exists("config.toml"):
+    with open("config.toml", "rb") as f:
+        config = tomllib.load(f)
+else:
+    print("[INFO] 'config.toml' is missing")
+
+    DEFAULT_CONFIG_GZIP = "H4sIANzlgmoC/4VUPW/bMBDd9SsOztICieEiKVAU6JCiSduhS9uhQFAYlHyWKVKkQJ6VSP+gY36CRw0ZigAeim5E/lePkh27H3A1UeTp3XvvHnVVaUtfkyM4hzysXRo6AyXmBWo0D7fg27CuMUcFZegcEh5DRScpmniyKq2uRfxWi4qPCXWJLRJBfAmdegnPJsncGpp62SK8iq+7Vgi1NYIRPInch1V+GOo00dLg9FrOaMFQpwPSHLVnnl+A0OSoG2amQ1fzFnpkzqZhKWGtH24fJRwmfJpgjcy4FE6heyS+bcdQM8etQudByUoQCRNWnmDbBqqwJmqiP3cGIdbt9R22o8NithAU7h8d9n3pAm/EDDNZhpWWHubW8YqWZSoMSM8IlR7DqEGt7fUIapE3MDq65GcyGR3QhaxslDXCjPouLxKbZUvHOjLcCs2sto6VDmX/KNg48SJJrlj2YshM5WzuRAnzJbELYbWwbVT0U/nQRU3zsCq0VcDmdI5bSwg/qBAy+R/ZmWDVVo3phgbOozlV48JbE3VepDGCoo1Dpn4ZmRSoCFRYm6ZmNi56xsTRe+bDFRsugsbJBn3K6FHyfrOE+0xjn3iw65lcZbasIpi0ptfOzY0JnQbDU7BpCp8/Xe56DIx6b969uXy+P0mgsC75AoQ7kmNGCt/cDEs2i09QF7z4eP5hExoOMN+9ebSPhtQYeQxvX8OTXOYilYRPfwtJxLtoUWEkkEqOpuMYcZi05RrT9NS8VUpoYNbOizTaFO+x9/wF7ngfMxS2cSa8lzdCOdEH1zSSLE9rJ5VrBgE7YWjkmOOhOdh541t0D9/TlAHLcD8rRHQO+5FIjX2wplqWMs5isk2B49+D0HxBInlG5HiJMbyPN1xxUDlwJOImg8bsmT3DxZJsKUiqpR8oq55hy84tLN8YFe5q/qJYqhP8g3Ny8OdwlvxN+Cz5BaFX6PJDBQAA".strip()
+
+    answer = input("[INFO] Would you like to create one? [Y/n]: ")
+
+    if answer.lower() in ("y", "yes", ""):
+        config_text = gzip.decompress(
+            base64.b64decode(DEFAULT_CONFIG_GZIP)
+        ).decode("utf-8")
+
+        with open("config.toml", "w", encoding="utf-8") as f:
+            f.write(config_text)
+
+        print("[INFO] 'config.toml' has been created\n")
+
+        with open("config.toml", "rb") as f:
+            config = tomllib.load(f)
+    else:
+        print()
+        config = {}
 
 plot_config = config.get("plot", {})
 font_size = plot_config.get("font_size", 10)
 line_width = plot_config.get("line_width", 3)
 event_marker_size = plot_config.get("event_marker_size", 13)
 occurrence_marker_color = plot_config.get("occurrence_marker_color", "cyan")
-occurrence_marker_size =  plot_config.get("occurrence_marker_size", 8)
+occurrence_marker_size = plot_config.get("occurrence_marker_size", 8)
 
 path_config = config.get("path", {})
 datumok_txt = path_config.get("datumok_txt", "datumok.txt")

@@ -8,16 +8,26 @@ from ftplib import FTP, all_errors
 
 os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__)))
 
-with open("config.toml", "rb") as f:
-    config = tomllib.load(f)
+# =====================================================
+# Alap konfiguráció betöltése
+# =====================================================
+try:
+    with open("config.toml", "rb") as config_file:
+        config = tomllib.load(config_file)
+except FileNotFoundError:
+    config = {}
 
 path_config = config.get("path", {})
-ftp_json = path_config.get("ftp_json", "ftp.json")
+ftp_json_path = path_config.get("ftp_json", "ftp.json")
 
-CONFIG = {}
+# =====================================================
+# FTP konfiguráció betöltése
+# =====================================================
+FTP_CONFIG = {}
+
 try:
-    with open(ftp_json, "r", encoding="utf-8") as f:
-        CONFIG = json.load(f)
+    with open(ftp_json_path, "r", encoding="utf-8") as ftp_config_file:
+        FTP_CONFIG = json.load(ftp_config_file)
 except FileNotFoundError:
     pass
 
@@ -36,11 +46,11 @@ DATE_REGEX = re.compile(rf'(?<!\()\b(?:{p1}|{p2}|{p3}|{p4})\b(?!\))')
 
 def download_log(sensor, output_file):
     """FTP kapcsolatot létesít a megadott szenzorhoz, és letölti a log fájlt."""
-    if sensor not in CONFIG:
+    if sensor not in FTP_CONFIG:
         print(f"WARNING: No FTP data for sensor '{sensor}'")
         return False
 
-    sensor_info = CONFIG[sensor]
+    sensor_info = FTP_CONFIG[sensor]
     filename = f"log_for_{sensor.lower()}.txt"
 
     try:
