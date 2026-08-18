@@ -12,13 +12,13 @@ os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen'
 # Alap konfiguráció betöltése
 # =====================================================
 try:
-    with open("config.toml", "rb") as config_file:
+    with open("tsf_viewer_config.toml", "rb") as config_file:
         config = tomllib.load(config_file)
 except FileNotFoundError:
     config = {}
 
 path_config = config.get("path", {})
-ftp_json_path = path_config.get("ftp_json", "ftp.json")
+ftp_json_path = path_config.get("ftp_json", "tsf_viewer_ftp.json")
 
 # =====================================================
 # FTP konfiguráció betöltése

@@ -72,11 +72,11 @@ warnings.filterwarnings("ignore", category=RuntimeWarning, module="pyqtgraph")
 # =====================================================
 # Config fájl betöltése
 # =====================================================
-if os.path.exists("config.toml"):
-    with open("config.toml", "rb") as f:
+if os.path.exists("tsf_viewer_config.toml"):
+    with open("tsf_viewer_config.toml", "rb") as f:
         config = tomllib.load(f)
 else:
-    print("[INFO] 'config.toml' is missing")
+    print("[INFO] 'tsf_viewer_config.toml' is missing")
 
     DEFAULT_CONFIG_GZIP = "H4sIANzlgmoC/4VUPW/bMBDd9SsOztICieEiKVAU6JCiSduhS9uhQFAYlHyWKVKkQJ6VSP+gY36CRw0ZigAeim5E/lePkh27H3A1UeTp3XvvHnVVaUtfkyM4hzysXRo6AyXmBWo0D7fg27CuMUcFZegcEh5DRScpmniyKq2uRfxWi4qPCXWJLRJBfAmdegnPJsncGpp62SK8iq+7Vgi1NYIRPInch1V+GOo00dLg9FrOaMFQpwPSHLVnnl+A0OSoG2amQ1fzFnpkzqZhKWGtH24fJRwmfJpgjcy4FE6heyS+bcdQM8etQudByUoQCRNWnmDbBqqwJmqiP3cGIdbt9R22o8NithAU7h8d9n3pAm/EDDNZhpWWHubW8YqWZSoMSM8IlR7DqEGt7fUIapE3MDq65GcyGR3QhaxslDXCjPouLxKbZUvHOjLcCs2sto6VDmX/KNg48SJJrlj2YshM5WzuRAnzJbELYbWwbVT0U/nQRU3zsCq0VcDmdI5bSwg/qBAy+R/ZmWDVVo3phgbOozlV48JbE3VepDGCoo1Dpn4ZmRSoCFRYm6ZmNi56xsTRe+bDFRsugsbJBn3K6FHyfrOE+0xjn3iw65lcZbasIpi0ptfOzY0JnQbDU7BpCp8/Xe56DIx6b969uXy+P0mgsC75AoQ7kmNGCt/cDEs2i09QF7z4eP5hExoOMN+9ebSPhtQYeQxvX8OTXOYilYRPfwtJxLtoUWEkkEqOpuMYcZi05RrT9NS8VUpoYNbOizTaFO+x9/wF7ngfMxS2cSa8lzdCOdEH1zSSLE9rJ5VrBgE7YWjkmOOhOdh541t0D9/TlAHLcD8rRHQO+5FIjX2wplqWMs5isk2B49+D0HxBInlG5HiJMbyPN1xxUDlwJOImg8bsmT3DxZJsKUiqpR8oq55hy84tLN8YFe5q/qJYqhP8g3Ny8OdwlvxN+Cz5BaFX6PJDBQAA".strip()
 
@@ -87,12 +87,12 @@ else:
             base64.b64decode(DEFAULT_CONFIG_GZIP)
         ).decode("utf-8")
 
-        with open("config.toml", "w", encoding="utf-8") as f:
+        with open("tsf_viewer_config.toml", "w", encoding="utf-8") as f:
             f.write(config_text)
 
-        print("[INFO] 'config.toml' has been created\n")
+        print("[INFO] 'tsf_viewer_config.toml' has been created\n")
 
-        with open("config.toml", "rb") as f:
+        with open("tsf_viewer_config.toml", "rb") as f:
             config = tomllib.load(f)
     else:
         print()
@@ -111,6 +111,7 @@ ftp_json = path_config.get("ftp_json", "ftp.json")
 
 compression_config = config.get("compression", {})
 file_size_limit = compression_config.get("file_size_limit", 4)
+h5_save_path = compression_config.get("h5_save_path", "C:/Users/Public")
 
 # =====================================================
 # Argumentumok kezelése és inicializálás
@@ -173,7 +174,7 @@ if not os.path.exists(datumok_txt):
     print("WARNING: 'datumok.txt' is missing")
 
 if not os.path.exists(ftp_json):
-    print("WARNING: 'ftp.json' is missing")
+    print("WARNING: 'tsf_viewer_ftp.json' is missing")
 
 # =====================================================
 # Tengely azonosító segédfüggvény
@@ -242,14 +243,17 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
     # 0. KÖZVETLEN HDF5 (.h5 / .tsf.h5) FÁJL BETÖLTÉSE
     # =========================================================================
     if path.endswith(".tsf.h5") or path.endswith(".h5"):
-        if not os.path.exists(path):
-            print(f"ERROR: File does not exist '{path}'")
+        # Ha teljes útvonalat adtak meg, jó úgy is, de ha csak fájlnév, a h5_save_path-ban keressük
+        target_path = path if os.path.isabs(path) and os.path.exists(path) else os.path.join(h5_save_path, f_name)
+
+        if not os.path.exists(target_path):
+            print(f"ERROR: File does not exist '{target_path}'")
             return np.array([]), np.empty((0, 0)), [], [], None, []
 
         try:
             with animated_loading(f"Reading '{f_name}'"):
-                h5f = h5py.File(path, "r")
-                _OPEN_H5_FILES[path] = h5f
+                h5f = h5py.File(target_path, "r")
+                _OPEN_H5_FILES[target_path] = h5f
 
                 timestamps = h5f["timestamps"][:]
                 data_matrix = h5f["data_matrix"][:]
@@ -272,14 +276,15 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
         return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
 
     # =========================================================================
-    # 0/B. ELLENŐRZÉS: LÉTEZIK-E A PROJEKTMAPPÁBAN A LEGENERÁLT .TSF.H5 VÁLTOZAT?
+    # 0/B. ELLENŐRZÉS: LÉTEZIK-E A H5_SAVE_PATH MAPPÁBAN LEGENERÁLT .TSF.H5 VÁLTOZAT?
     # =========================================================================
-    h5_in_project = os.path.basename(path) + ".h5"  # pl. "adatok.tsf.h5" a projektmappában
+    h5_filename = f_name + ".h5"  # pl. "adatok.tsf.h5"
+    h5_in_save_path = os.path.join(h5_save_path, h5_filename)
 
-    if os.path.exists(h5_in_project):
+    if os.path.exists(h5_in_save_path):
         is_h5 = True
         return load_tsf(
-            path=h5_in_project,
+            path=h5_in_save_path,
             handle_gaps=handle_gaps,
             replace_9999=replace_9999,
             size_limit_gb=size_limit_gb
@@ -343,13 +348,13 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
     file_size_gb = file_size_bytes / (1024 ** 3)
 
     # =========================================================================
-    # A) NAGY FÁJL KEZELÉSE (> 4 GB) -> HDF5 BINÁRIS UTÓLAGOS BETÖLTÉS
+    # A) NAGY FÁJL KEZELÉSE (> 4 GB) -> HDF5 BINÁRIS UTÓLAGOS BETÖLTÉS VAGY KIHAGYÁS
     # =========================================================================
     if file_size_gb > size_limit_gb:
-        h5_path = os.path.basename(path) + ".h5"
+        h5_path = os.path.join(h5_save_path, f_name + ".h5")
 
         if not os.path.exists(h5_path):
-            convert_tsf_to_h5(
+            conversion_result = convert_tsf_to_h5(
                 tsf_path=path,
                 h5_path=h5_path,
                 channel_names=channel_names,
@@ -359,29 +364,31 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
                 handle_gaps=handle_gaps,
                 replace_9999=True,
             )
+            # Ha a felhasználó 'n'-t nyomott, a convert_tsf_to_h5 None-nal tér vissza,
+            # ekkor kilépünk ebből az ágból, és folytatjuk a normál (B ág szerinti) beolvasással!
+            if conversion_result is not None:
+                try:
+                    with animated_loading(f"Reading '{f_name}.h5'"):
+                        is_h5 = True
+                        h5f = h5py.File(h5_path, "r")
+                        _OPEN_H5_FILES[h5_path] = h5f
 
-        try:
-            with animated_loading(f"Reading '{f_name}.h5'"):
-                is_h5 = True
-                h5f = h5py.File(h5_path, "r")
-                _OPEN_H5_FILES[h5_path] = h5f
+                        timestamps = h5f["timestamps"][:]
+                        data_matrix = h5f["data_matrix"][:]
 
-                timestamps = h5f["timestamps"][:]
-                data_matrix = h5f["data_matrix"][:]
+                        inc_val = h5f.attrs.get("increment", np.nan)
+                        increment_ret = float(inc_val) if not np.isnan(inc_val) else None
 
-                inc_val = h5f.attrs.get("increment", np.nan)
-                increment_ret = float(inc_val) if not np.isnan(inc_val) else None
+                        gaps_ret = list(h5f["gaps"][:]) if "gaps" in h5f else []
 
-                gaps_ret = list(h5f["gaps"][:]) if "gaps" in h5f else []
+                except Exception as e:
+                    print(f"ERROR while reading HDF5 file: {e}")
+                    return empty_return
 
-        except Exception as e:
-            print(f"ERROR while reading HDF5 file: {e}")
-            return empty_return
-
-        return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
+                return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
 
     # =========================================================================
-    # B) KIS/KÖZEPES FÁJL KEZELÉSE (<= 4 GB)
+    # B) KIS/KÖZEPES FÁJL KEZELÉSE (VAGY NAGY FÁJL KIFEJEZETTEN KÉRT KIHAGYÁSA)
     # =========================================================================
     try:
         with animated_loading(f"Reading '{f_name}'"):

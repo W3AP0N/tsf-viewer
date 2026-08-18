@@ -21,10 +21,10 @@ occurrence_marker_size = 8
 [path]
 # A program futásához szükséges fájlok elérési útjai
 
-# Alapértelmezett értékek: "datumok.txt" és "ftp.json"
+# Alapértelmezett értékek: "datumok.txt" és "tsf_viewer_ftp.json"
 # Ebben az esetben a projekt könyvtárban keressük a fájlokat.
 datumok_txt = "datumok.txt"
-ftp_json = "ftp.json"
+ftp_json = "tsf_viewer_ftp.json"
 
 [compression]
 # Az ennél nagyobb TSF fájlokat a program HDF5 formátumba tömöríti.
@@ -33,6 +33,9 @@ ftp_json = "ftp.json"
 # ezért a gyakran megnyitott fájlokat érdemes tömöríteni. A legegyszerűbb
 # módja ennek a file_size_limit = 0 értékre való állítása. Ilyenkor futtatás
 # után a program automatikusan megkérdezi, hogy kívánjuk-e tömöríteni.
-
 # Alapértelmezett érték: 4
 file_size_limit = 4
+
+# A legenerált és tömörített .h5 fájlok mentési helye
+# Alapértelmezett érték: "C:/Users/Public"
+h5_save_path = "C:/Users/Public"

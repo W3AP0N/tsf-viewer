@@ -3,10 +3,27 @@ import sys
 import time
 import math
 import h5py
+import tomllib
 import numpy as np
 import pandas as pd
 
 os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__)))
+
+# =====================================================
+# Config betöltése
+# =====================================================
+try:
+    with open("tsf_viewer_config.toml", "rb") as config_file:
+        config = tomllib.load(config_file)
+except FileNotFoundError:
+    config = {}
+
+path_config = config.get("path", {})
+compression_config = config.get("compression", {})
+h5_save_path = compression_config.get("h5_save_path", "C:/Users/Public")
+
+# Biztosítjuk, hogy a mentési mappa létezzen
+os.makedirs(h5_save_path, exist_ok=True)
 
 # =====================================================
 # Segédfüggvények
@@ -128,18 +145,19 @@ def convert_tsf_to_h5(
     f_name = os.path.basename(tsf_path)
 
     if ask_confirmation:
-        print(f"\n[INFO] '{f_name}' is too large and must be compressed.")
-        choice = input("[INFO] Proceed? [Y/n]: ").strip().lower()
+        print(f"\n[INFO] '{f_name}' is too large.")
+        choice = input("[INFO] Do you want to compress it to HDF5? [Y/n]: ").strip().lower()
 
         if choice not in ("y", "yes", ""):
-            print("[INFO] Operation cancelled.")
+            print("[INFO] Skipping compression.")
+            return None
             input("\n\nPress ENTER to exit...")
             sys.exit(1)
 
     start_time = time.time()
 
     if h5_path is None:
-        h5_path = f_name + ".h5"
+        h5_path = os.path.join(h5_save_path, f_name + ".h5")
 
     if data_start_line is None or channel_names is None:
         ch, un, inc, start = parse_tsf_header(tsf_path)
@@ -232,7 +250,7 @@ def convert_tsf_to_h5(
 
                 # 3. Feldolgozás darabokban
                 for chunk_idx, df in enumerate(df_iter):
-                    sys.stdout.write(f"\rConverting '{f_name}'... chunk {chunk_idx + 1} / ~{estimated_chunks}")
+                    sys.stdout.write(f"\r[INFO] Converting '{f_name}'... chunk {chunk_idx + 1} / ~{estimated_chunks}")
                     sys.stdout.flush()
 
                     if df.empty:
