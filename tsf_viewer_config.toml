@@ -28,14 +28,14 @@ ftp_json = "tsf_viewer_ftp.json"
 
 [compression]
 # Az ennél nagyobb TSF fájlokat a program HDF5 formátumba tömöríti.
-# Érdemes a teljes RAM méretének felét megadni, GB (gigabite) formátumban.
+# Érdemes a teljes RAM méretének felét megadni, GB (gigabyte) formátumban.
 # Ezeket a bináris állományokat sokkal gyorsabban olvassa be a program,
 # ezért a gyakran megnyitott fájlokat érdemes tömöríteni. A legegyszerűbb
 # módja ennek a file_size_limit = 0 értékre való állítása. Ilyenkor futtatás
 # után a program automatikusan megkérdezi, hogy kívánjuk-e tömöríteni.
 # Alapértelmezett érték: 4
-file_size_limit = 4
+file_size_limit = 0
 
-# A legenerált és tömörített .h5 fájlok mentési helye
+# A legenerált és tömörített HDF5 (.h5) fájlok mentési helye
 # Alapértelmezett érték: "C:/Users/Public"
 h5_save_path = "C:/Users/Public"
