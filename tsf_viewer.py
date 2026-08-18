@@ -78,7 +78,7 @@ if os.path.exists("tsf_viewer_config.toml"):
 else:
     print("[INFO] 'tsf_viewer_config.toml' is missing")
 
-    DEFAULT_CONFIG_GZIP = "H4sIAGZUhGoC/4VUzW7UMBC+5yms9NJKZSkqlVAlDgVa4ICE+JGQKrRydmcTrx07smdTkjfg2EfY4x56QJX2gLhZfS9mku4PFC05Jfbk+xl/48vKOPya7Ikzkcelz+LCihLyKRiwd9citHFZQw5alHHhAeFQVPgoA8s789KZWvK/Rla0jWBKaAFR8Edc6FPx5CiZOIvDoFoQz/lzQwWidlYSQkCZhzjPd0MdJ0ZZGF6pMRYEddwjTcAE0vlFINgcTEPKTFzUtAQBSLNtyEpcmrvrtYXdgo8TqIEUl9Jr8GvhKzqCGnuiiosgtKokorRxHlCsaEQVl4gN9+fGguC6Ld5+mTssx4XEeLvucOhKC/gmxzBSZZwbFcTEeXrDWZlJK1QghMoMRNqAMe4qFbXMG5HuXdBzdJTu8AXkLB010qYdy7PEjUYzTz5GsDI6csZ5ctqX/aPgvhPPkuSSbBd9Zirvci9LMZkhdSHOC9eyo186xAV7msT51DgtqDkLT9RKxJ84lSr5n9ixJNdOD/Ab9ppTDJNhreCKpEywGkyDs2z5POM0ypbPG7tXFjUFjULHpW1qEua5feQBQiBpVHEvS+IguScaEhG73+ZNiGfIPLzxT/rkcuTKinGVs11HSIe1cWGEpbNxWSY+fbzY0PXiuo69eXVxsn2+AuOypLGIN6gGhBS/+zGU1ELaATOllw9n7+6jRLGmiZxwU7HPklWH4vULsZ+rXGYNwsEf0WG88xY0sIBMUWA9hYsiZhzV2KaTFpzW0ghS7YPMuGM83SHQH7DRfUhQ0PJJ0VreSO1lF2fbKHR0hhurVNMb2BgDqwYUGkNxz5vQgr/7kWUEWMbb8VRy56A7HWWgi9vQqFLxsRytsuHp0pCGxobFEyKFTg7EW557TfGlGKLkRQLlRNqthssZulKi0rPQS9adwpY6VziaIx1vavpjOtOP4C/NO2+Mp8lDvU/724KNWvCkFbsMb6ESQpeA/UFxcrAek5Junm5KCr7KdtKmL08ffw7gw+P3s8yoUZoUJ8MgaxjydHJiHxT8BnlaOSTsBQAA".strip()
+    DEFAULT_CONFIG_GZIP = "H4sIAPlbhGoC/4VUwW7bRhC98ys2zMUGHMGFayAI0EPS2m3RFijaBC1qBcKSHJGrXe4SuyM65B/kllxy11EHH4oAOhS9LfxfnSElSy0MVSeKO3zz3ps3e9MYh2+Tp+KlKOPGZ3FtRQ3lAgzY+48i9HHTQgla1HHtAeFMNPgsA8snq9qZVvK3RjZ0jGBq6AFR8J+41i/EF+fJ3FmcBdWD+Ir/7luBaJ2VhBBQliGuyuNQF4lRFma3qsCKoC5GpDmYQDx/Fwi2BNMRMxPXLb2CAMTZdiQlbsz9xwcJxwlfJNACMa6l1+AfiO/aEVThqVVcB6FVIxGljauAYtdGNHGD2LE/dxYE1x30HV+zw7KoJMbPDw6HobSCd7KAXNVxZVQQc+fpCZd1Jq1QgRAaMxFpB8a421S0suxE+vSafufn6RFdQMrSvJM2Hbo8T1yeLz3pyGEnNHfGeVI6lj1SsHXieZLckOxqzEzjXellLeZLJBfiqnI9K/pbh7hmTfO4WhinBZmz9tRaifgXLqRK/o9sIUm10xN8hyPnFMN81iq4JSpzbCaL4CxLvso4jbLneePwyKQWoFHouLFdS8Q820caIASiRhVbWhInybbRjBqx+sO+CfWZcR8+eLR9cpO7umFc5ezgCPGwNq6NsDQbl2Xi9a/X+3YjucGx7765vjycr8C4qWkt4h2qCSHF976AmiykEzALevjl5U/bKFGsaSPnbCqOWbLqTHz7SpyUqpRZh3D6r+gw3lUPGphApiiwnsJFETOOamw3UAtOa2kEsfZBZuwYb3cI9AXseZ8RFPQ8KXpXdlJ7OcTZdgodzXAvlWpGAXthYNWEQmMo7mUXevD3f2YZAdbxc7GQ7BwM01EGhrjNjKoVj+V8lw1Pl4Y0tDZMnhApdHIivue91xRfiiFKfkmgnEh7YLhcoqslKr0MI2U9MOzJucrRHul419IXi6V+Bv/hfPTG+DJ5hO94W7BQC5644pDhA1RCGBJwMqkuTx/WpKabZ9iSiq8ywvhN2cLdcgR/iJ9eX/149cf9B6F2cqUolo2hAclcByNDJU7S6TQ9pYNaNk1c6e21RJiUGYrlkydHtaRfv5hO3wTwYTr9eZkZladJdTkLsoUZLz0vwiMl/wCIvHoDRQYAAA==".strip()
 
     answer = input("[INFO] Would you like to create one? [Y/n]: ")
 
@@ -111,7 +111,7 @@ ftp_json = path_config.get("ftp_json", "ftp.json")
 
 compression_config = config.get("compression", {})
 file_size_limit = compression_config.get("file_size_limit", 4)
-h5_save_path = compression_config.get("h5_save_path", "C:/Users/Public")
+h5_save_path = compression_config.get("h5_save_path", "C:\\Users\\Public")
 
 # =====================================================
 # Argumentumok kezelése és inicializálás
@@ -240,16 +240,17 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
     global is_h5
 
     # =========================================================================
-    # 0. KÖZVETLEN HDF5 (.h5 / .tsf.h5) FÁJL BETÖLTÉSE
+    # 0. HA KIFEJEZETTEN HDF5 (.h5 / .tsf.h5) FÁJLMANCSEST ADTAK MEG
     # =========================================================================
     if path.endswith(".tsf.h5") or path.endswith(".h5"):
-        # Ha teljes útvonalat adtak meg, jó úgy is, de ha csak fájlnév, a h5_save_path-ban keressük
-        target_path = path if os.path.isabs(path) and os.path.exists(path) else os.path.join(h5_save_path, f_name)
+        # Pontosan ott keressük, ahonnan megadták (ha relatív, akkor a futtatási mappában, vagy ha abszolút, akkor ott)
+        target_path = path if os.path.exists(path) else os.path.join(h5_save_path, f_name)
 
         if not os.path.exists(target_path):
             print(f"ERROR: File does not exist '{target_path}'")
             return np.array([]), np.empty((0, 0)), [], [], None, []
 
+        is_h5 = True
         try:
             with animated_loading(f"Reading '{f_name}'"):
                 h5f = h5py.File(target_path, "r")
@@ -276,9 +277,9 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
         return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
 
     # =========================================================================
-    # 0/B. ELLENŐRZÉS: LÉTEZIK-E A H5_SAVE_PATH MAPPÁBAN LEGENERÁLT .TSF.H5 VÁLTOZAT?
+    # 0/B. HA .TSF FÁJL UTÁN NÉZZÜK: LÉTEZIK-E A H5_SAVE_PATH-BAN A .TSF.H5?
     # =========================================================================
-    h5_filename = f_name + ".h5"  # pl. "adatok.tsf.h5"
+    h5_filename = f_name + ".h5"  # pl. "tpso...tsf.h5"
     h5_in_save_path = os.path.join(h5_save_path, h5_filename)
 
     if os.path.exists(h5_in_save_path):

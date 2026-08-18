@@ -37,5 +37,6 @@ ftp_json = "tsf_viewer_ftp.json"
 file_size_limit = 0
 
 # A legenerált és tömörített HDF5 (.h5) fájlok mentési helye
-# Alapértelmezett érték: "C:/Users/Public"
-h5_save_path = "C:/Users/Public"
+# Windowson KÖTELEZŐ ilyenkor a dupla backslash ("\\") a mappák jelölésénél!!
+# Alapértelmezett érték: "C:\\Users\\Public"
+h5_save_path = "C:\\Users\\Public"
