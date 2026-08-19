@@ -78,7 +78,7 @@ if os.path.exists("tsf_viewer_config.toml"):
 else:
     print("[INFO] 'tsf_viewer_config.toml' is missing")
 
-    DEFAULT_CONFIG_GZIP = "H4sIAChfhWoC/4VUwW7bRhC98ysmzMUGHMGFYyAI0EOa2G3RFijaFC1qFcKSHJGrXe4Suys65B/01lx611EHH4oAOhS9LfxfnSElS20MRSeKO3zz3ps3e9NoG35LnsIrKOPGZXFtoMZygRrN/Xvwfdy0WKKCOq4dBjyDJjzL0PDJqra6FfytFg0dB9Q19hgC8J+4Vi/hs/Nkbk2YedkjfM5/960QWmsEIfggSh9X5XGoi0RLg7NbWYSKoC5GpDlqTzx/gYCmRN0RMx3XLb1Cj8TZdCQlbvT9+wcJxwlfJNgiMa6FU+geiO/aEVThqFVce1CyESEIE1c+wK4NNHETQsf+3BkErjvoO75mh0VRiRA/PDjsh9IK34kCc1nHlZYe5tbRU1jWmTAgPSE0egJph1rb2xRaUXaQPr2m3/l5ekQXkrI074RJhy4vEpvnS0c6ctwJza22jpSOZY8UbJ14kSQ3JLsaM9M4WzpRw3wZyIW4qmzPiv5RPq5Z0zyuFtoqIHPWjlpLiH+HhZDJp8gWglRbNQnvwsg5DX4+ayXeEpV5aCYLbw1Lvso4jaLneYfhkUktUAVQcWO6log5to80oPdEjSq2tESYJNtGM2rE6g/7JtRnxn344NH2yU1u64ZxpTWDI8TDmLjWYGg2Nsvg7Y/X+3YjucGxr95cXx7OF0Lc1LQW8S7ICSHF312BNVlIJ6gX9PDDq++2UaJY00bO2dQwZsnIM/jyCzgpZSmyLuDpf6LDeFc9KmQCmaTAOgoXRUxbqjHdQM1bpYQGYu28yNgx3m7v6Qvc8z4jKOx5UvSu7IRyYoiz6WSwNMO9VKoZBeyFoZETCo2muJed79Hd/5VlBFjHD8VCsHM4TEdqHOI207KWPJbzXTYcXRpC09oweUKk0IkJfM17ryi+FMMg+CWBciLNgeFiGWwtglRLP1JWA8OenKss7ZGKdy19sViqZ/g/zkdvjOfJx3yfj7cFCzXoiGsYMnyASghDAk4m1eXpw5rUdPMMW1LxVUYYP0tT2FuO4Dfxz7dX3179ev8HyJ1cAcWy0TQgkSuvha/gJJ1O01M6qEXTxJXaXkuESZmhWD55sg3p4T5CS8vKwQKDNe2J1nvEo9LT1y+n0588Oj+dfr/MtMzTpLqcedHijO8I3ptHSv4FfCNNk3QGAAA=".strip()
+    DEFAULT_CONFIG_GZIP = "H4sIAHV6hWoC/4VUz4/jNBS+56/wdi8zaLYaNDvSaiUOC8ywCJAQLAIxRZWTvCZuHDuy3cwm/wE39sK9xx7mgFbqAXGz5v/ie0k7LbAackps5/vx3vd802gbfkmeileiiFuXxo0RNRVL0mTu3wnfx21LBVWijhtHgc5EE56lZHhnXVvdSv5XywbbgXRNPYUg+CNuqpfi4/NkYU2Ye9WT+IQ/D1QkWmskEHyQhY/r4nGoi0QrQ/NblYcSUBcj0oK0h86fRCBTkO6gTMdNiyXyBM2mg5W41ffvHiw8LvgioZaguJauIvcgfE8HqNyBKm68qFQjQ5Amrn0QexrRxG0IHdfnzpDgc0e84zJXWOalDPH9Q4X9cLSktzKnTNVxrZUXC+vwFlZ1Ko1QHgiNnopJR1rb24loZdGJydNrPOfnk0d8EZxNsk6aycDyIrFZtnLwkdHeaGa1dXA6HvvAgV0lXiTJDWyXY2YaZwsna7FYBVQhrkvbs6O/Kh837GkR10ttK4HibByolYh/hqVUyf+JzSVc22oa3oZR8yT4xbxVdAspi9BMl94atnyVchplz/0OwyuLWlIVRBW3pmshzHH54IG8hzSc2MmSYZrsiOYgYvfHvAl45szDGx+kT24yWzeMq6wZKgIdxsSNFga9sWkq3nx/faAbxQ0Ve/359eVxf0WI2xpjEe+CmgIp/upyqlFC7JBe4uW7V9/sooRYYyIXXNQwZsmoM/HFp+KkUIVMu0Cn/4gO4131VBELSBUC6xAuRExbnDHdIM3bqpJaQLXzMuWK8XR7jz/ooPsMUNRzp7BWdLJycoiz6VSw6OHBKs6MBg7GyKgpQqMR96LzPbn7P9IUgHV8ny8lV46G7ihNQ9zmWtWK23K+z4bDpSE1xobFAxGhk1PxJc99hfgihkHyIkA5keao4HIVbC2DqlZ+lFwNCntUrrSYoyretfhjuaqe0b80P3pjPE/+q/f5eFuwUUMOWsOQ4SNUIAwJOJmWl6cPY1Lj5hmmpOSrjHl/VCa3t5zBr+Lvb66+vvr5/jeh9n6lyFeNRodkVnktfSlOJrPZ5BQbtWyauK529xJAERrk8smTXUqPB1K0mFZOljBUY1C0PiBOxyvns5ez2Q+enJ/Nvl2lWmWYPSC9liLzSmtZ2ADuj5g6Xxl2UpwNU+kop6BGh4OtgWdhCzScaak3ShynH6LCowUHS1Jezr1sac43EU8nlv4GfFqHTMoGAAA=".strip()
 
     answer = input("[INFO] Would you like to create one? [Y/n]: ")
 
@@ -111,7 +111,7 @@ ftp_json = path_config.get("ftp_json", "tsf_viewer_ftp.json")
 
 compression_config = config.get("compression", {})
 file_size_limit = compression_config.get("file_size_limit", 4)
-h5_save_path = compression_config.get("h5_save_path", "C:\\Users\\Public")
+h5_save_path = compression_config.get("h5_save_path", "*")
 
 # =====================================================
 # Argumentumok kezelése és inicializálás
@@ -148,14 +148,14 @@ if not os.path.isfile(filepath):
     sys.exit(1)
 
 if not filename.lower().endswith((".tsf", ".tsf.h5")):
-    print(f"ERROR: '{filename}' is not a valid .tsf file!")
+    print(f"ERROR: '{filename}' is not a '.tsf' or '.tsf.h5' file!")
     input("\n\nPress ENTER to exit...")
     sys.exit(1)
 
 if len(sys.argv) >= 3:
     filepath2 = sys.argv[2]
     if not filepath2.endswith(".earthquake.tsf"):
-        print(f"ERROR: '{os.path.basename(filepath2)}' is not a .earthquake.tsf file!")
+        print(f"ERROR: '{os.path.basename(filepath2)}' is not a '.earthquake.tsf' file!")
         input("\n\nPress ENTER to exit...")
         sys.exit(1)
 
@@ -237,7 +237,10 @@ _OPEN_H5_FILES = {}
 
 def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_size_limit):
     f_name = os.path.basename(path)
-    global is_h5
+    global is_h5, h5_save_path
+    if h5_save_path == "*":
+        abs_path = os.path.abspath(path)
+        h5_save_path = os.path.dirname(abs_path)
 
     # =========================================================================
     # 0. HA KIFEJEZETTEN HDF5 (.h5 / .tsf.h5) FÁJLMANCSEST ADTAK MEG

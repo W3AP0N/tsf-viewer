@@ -141,19 +141,22 @@ def convert_tsf_to_h5(
         chunksize: int = 1_000_000,
         ask_confirmation: bool = True,
 ) -> str:
+    global h5_save_path
+    if h5_save_path == "*":
+        abs_path = os.path.abspath(tsf_path)
+        h5_save_path = os.path.dirname(abs_path)
+
     """TSF fájl átalakítása HDF5 formátumba optimális teljesítménnyel."""
     f_name = os.path.basename(tsf_path)
 
     if ask_confirmation:
         print(f"\n[INFO] '{f_name}' is too large")
         print("[INFO] Reading this file without compression may cause memory errors")
-        choice = input("[INFO] Do you want to compress it to HDF5? [Y/n]: ").strip().lower()
+        choice = input("[INFO] Would you like to compress it to HDF5? [Y/n]: ").strip().lower()
 
         if choice not in ("y", "yes", ""):
             print("[INFO] Skipping compression")
             return None
-            input("\n\nPress ENTER to exit...")
-            sys.exit(1)
 
     start_time = time.time()
 
