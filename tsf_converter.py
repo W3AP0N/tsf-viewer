@@ -22,9 +22,6 @@ path_config = config.get("path", {})
 compression_config = config.get("compression", {})
 h5_save_path = compression_config.get("h5_save_path", "C:\\Users\\Public")
 
-# Biztosítjuk, hogy a mentési mappa létezzen
-os.makedirs(h5_save_path, exist_ok=True)
-
 # =====================================================
 # Segédfüggvények
 # =====================================================
