@@ -34,9 +34,10 @@ ftp_json = "tsf_viewer_ftp.json"
 # módja ennek a file_size_limit = 0 értékre való állítása. Ilyenkor futtatás
 # után a program automatikusan megkérdezi, hogy kívánjuk-e tömöríteni.
 # Alapértelmezett érték: 4
-file_size_limit = 0
+file_size_limit = 4
 
 # A legenerált és tömörített HDF5 (.h5) fájlok mentési helye
 # Windowson KÖTELEZŐ ilyenkor a dupla backslash ("\\") a mappák jelölésénél!!
+# Az elérési út végére nem kell backslash
 # Alapértelmezett érték: "C:\\Users\\Public"
 h5_save_path = "C:\\Users\\Public"

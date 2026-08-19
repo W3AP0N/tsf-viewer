@@ -145,11 +145,12 @@ def convert_tsf_to_h5(
     f_name = os.path.basename(tsf_path)
 
     if ask_confirmation:
-        print(f"\n[INFO] '{f_name}' is too large.")
+        print(f"\n[INFO] '{f_name}' is too large")
+        print("[INFO] Reading this file without compression may cause memory errors")
         choice = input("[INFO] Do you want to compress it to HDF5? [Y/n]: ").strip().lower()
 
         if choice not in ("y", "yes", ""):
-            print("[INFO] Skipping compression.")
+            print("[INFO] Skipping compression")
             return None
             input("\n\nPress ENTER to exit...")
             sys.exit(1)

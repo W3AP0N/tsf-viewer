@@ -78,7 +78,7 @@ if os.path.exists("tsf_viewer_config.toml"):
 else:
     print("[INFO] 'tsf_viewer_config.toml' is missing")
 
-    DEFAULT_CONFIG_GZIP = "H4sIAPlbhGoC/4VUwW7bRhC98ys2zMUGHMGFayAI0EPS2m3RFijaBC1qBcKSHJGrXe4SuyM65B/kllxy11EHH4oAOhS9LfxfnSElSy0MVSeKO3zz3ps3e9MYh2+Tp+KlKOPGZ3FtRQ3lAgzY+48i9HHTQgla1HHtAeFMNPgsA8snq9qZVvK3RjZ0jGBq6AFR8J+41i/EF+fJ3FmcBdWD+Ir/7luBaJ2VhBBQliGuyuNQF4lRFma3qsCKoC5GpDmYQDx/Fwi2BNMRMxPXLb2CAMTZdiQlbsz9xwcJxwlfJNACMa6l1+AfiO/aEVThqVVcB6FVIxGljauAYtdGNHGD2LE/dxYE1x30HV+zw7KoJMbPDw6HobSCd7KAXNVxZVQQc+fpCZd1Jq1QgRAaMxFpB8a421S0suxE+vSafufn6RFdQMrSvJM2Hbo8T1yeLz3pyGEnNHfGeVI6lj1SsHXieZLckOxqzEzjXellLeZLJBfiqnI9K/pbh7hmTfO4WhinBZmz9tRaifgXLqRK/o9sIUm10xN8hyPnFMN81iq4JSpzbCaL4CxLvso4jbLneePwyKQWoFHouLFdS8Q820caIASiRhVbWhInybbRjBqx+sO+CfWZcR8+eLR9cpO7umFc5ezgCPGwNq6NsDQbl2Xi9a/X+3YjucGx7765vjycr8C4qWkt4h2qCSHF976AmiykEzALevjl5U/bKFGsaSPnbCqOWbLqTHz7SpyUqpRZh3D6r+gw3lUPGphApiiwnsJFETOOamw3UAtOa2kEsfZBZuwYb3cI9AXseZ8RFPQ8KXpXdlJ7OcTZdgodzXAvlWpGAXthYNWEQmMo7mUXevD3f2YZAdbxc7GQ7BwM01EGhrjNjKoVj+V8lw1Pl4Y0tDZMnhApdHIivue91xRfiiFKfkmgnEh7YLhcoqslKr0MI2U9MOzJucrRHul419IXi6V+Bv/hfPTG+DJ5hO94W7BQC5644pDhA1RCGBJwMqkuTx/WpKabZ9iSiq8ywvhN2cLdcgR/iJ9eX/149cf9B6F2cqUolo2hAclcByNDJU7S6TQ9pYNaNk1c6e21RJiUGYrlkydHtaRfv5hO3wTwYTr9eZkZladJdTkLsoUZLz0vwiMl/wCIvHoDRQYAAA==".strip()
+    DEFAULT_CONFIG_GZIP = "H4sIAChfhWoC/4VUwW7bRhC98ysmzMUGHMGFYyAI0EOa2G3RFijaFC1qFcKSHJGrXe4Suys65B/01lx611EHH4oAOhS9LfxfnSElS20MRSeKO3zz3ps3e9NoG35LnsIrKOPGZXFtoMZygRrN/Xvwfdy0WKKCOq4dBjyDJjzL0PDJqra6FfytFg0dB9Q19hgC8J+4Vi/hs/Nkbk2YedkjfM5/960QWmsEIfggSh9X5XGoi0RLg7NbWYSKoC5GpDlqTzx/gYCmRN0RMx3XLb1Cj8TZdCQlbvT9+wcJxwlfJNgiMa6FU+geiO/aEVThqFVce1CyESEIE1c+wK4NNHETQsf+3BkErjvoO75mh0VRiRA/PDjsh9IK34kCc1nHlZYe5tbRU1jWmTAgPSE0egJph1rb2xRaUXaQPr2m3/l5ekQXkrI074RJhy4vEpvnS0c6ctwJza22jpSOZY8UbJ14kSQ3JLsaM9M4WzpRw3wZyIW4qmzPiv5RPq5Z0zyuFtoqIHPWjlpLiH+HhZDJp8gWglRbNQnvwsg5DX4+ayXeEpV5aCYLbw1Lvso4jaLneYfhkUktUAVQcWO6log5to80oPdEjSq2tESYJNtGM2rE6g/7JtRnxn344NH2yU1u64ZxpTWDI8TDmLjWYGg2Nsvg7Y/X+3YjucGxr95cXx7OF0Lc1LQW8S7ICSHF312BNVlIJ6gX9PDDq++2UaJY00bO2dQwZsnIM/jyCzgpZSmyLuDpf6LDeFc9KmQCmaTAOgoXRUxbqjHdQM1bpYQGYu28yNgx3m7v6Qvc8z4jKOx5UvSu7IRyYoiz6WSwNMO9VKoZBeyFoZETCo2muJed79Hd/5VlBFjHD8VCsHM4TEdqHOI207KWPJbzXTYcXRpC09oweUKk0IkJfM17ryi+FMMg+CWBciLNgeFiGWwtglRLP1JWA8OenKss7ZGKdy19sViqZ/g/zkdvjOfJx3yfj7cFCzXoiGsYMnyASghDAk4m1eXpw5rUdPMMW1LxVUYYP0tT2FuO4Dfxz7dX3179ev8HyJ1cAcWy0TQgkSuvha/gJJ1O01M6qEXTxJXaXkuESZmhWD55sg3p4T5CS8vKwQKDNe2J1nvEo9LT1y+n0588Oj+dfr/MtMzTpLqcedHijO8I3ptHSv4FfCNNk3QGAAA=".strip()
 
     answer = input("[INFO] Would you like to create one? [Y/n]: ")
 
@@ -107,7 +107,7 @@ occurrence_marker_size = plot_config.get("occurrence_marker_size", 8)
 
 path_config = config.get("path", {})
 datumok_txt = path_config.get("datumok_txt", "datumok.txt")
-ftp_json = path_config.get("ftp_json", "ftp.json")
+ftp_json = path_config.get("ftp_json", "tsf_viewer_ftp.json")
 
 compression_config = config.get("compression", {})
 file_size_limit = compression_config.get("file_size_limit", 4)
@@ -564,7 +564,7 @@ class Viewer(QWidget):
 
     def _setup_ui(self):
         """Létrehozza az ablakot, a legördülő menüt, a gyorsgombokat és a gombsort."""
-        if is_h5:
+        if is_h5 and not filename.lower().endswith(".h5"):
             self.setWindowTitle(f"TSF Viewer - {filename}.h5")
         else:
             self.setWindowTitle(f"TSF Viewer - {filename}")
