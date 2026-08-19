@@ -10,7 +10,7 @@ pip install pandas numpy pyqtgraph PyQt6 requests h5py
 ```
 
 ## Konfigurációs fájlok (ftp.json, config.toml)
-A program egy ftp.json nevű állományból olvassa ki a log fájlok eléréséhez szükséges FTP adatokat. Ezt a program helyes működéséhez csatolnunk kell a projektmappába.
+A program egy tsf_viewer_ftp.json nevű állományból olvassa ki a log fájlok eléréséhez szükséges FTP adatokat. Ezt a program helyes működéséhez csatolnunk kell a projektmappába.
 
 A JSON szerkezete:
 ```
