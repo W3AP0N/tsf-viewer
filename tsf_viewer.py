@@ -78,7 +78,7 @@ if os.path.exists("tsf_viewer_config.toml"):
 else:
     print("[INFO] 'tsf_viewer_config.toml' is missing")
 
-    DEFAULT_CONFIG_GZIP = "H4sIAHV6hWoC/4VUz4/jNBS+56/wdi8zaLYaNDvSaiUOC8ywCJAQLAIxRZWTvCZuHDuy3cwm/wE39sK9xx7mgFbqAXGz5v/ie0k7LbAackps5/vx3vd802gbfkmeileiiFuXxo0RNRVL0mTu3wnfx21LBVWijhtHgc5EE56lZHhnXVvdSv5XywbbgXRNPYUg+CNuqpfi4/NkYU2Ye9WT+IQ/D1QkWmskEHyQhY/r4nGoi0QrQ/NblYcSUBcj0oK0h86fRCBTkO6gTMdNiyXyBM2mg5W41ffvHiw8LvgioZaguJauIvcgfE8HqNyBKm68qFQjQ5Amrn0QexrRxG0IHdfnzpDgc0e84zJXWOalDPH9Q4X9cLSktzKnTNVxrZUXC+vwFlZ1Ko1QHgiNnopJR1rb24loZdGJydNrPOfnk0d8EZxNsk6aycDyIrFZtnLwkdHeaGa1dXA6HvvAgV0lXiTJDWyXY2YaZwsna7FYBVQhrkvbs6O/Kh837GkR10ttK4HibByolYh/hqVUyf+JzSVc22oa3oZR8yT4xbxVdAspi9BMl94atnyVchplz/0OwyuLWlIVRBW3pmshzHH54IG8hzSc2MmSYZrsiOYgYvfHvAl45szDGx+kT24yWzeMq6wZKgIdxsSNFga9sWkq3nx/faAbxQ0Ve/359eVxf0WI2xpjEe+CmgIp/upyqlFC7JBe4uW7V9/sooRYYyIXXNQwZsmoM/HFp+KkUIVMu0Cn/4gO4131VBELSBUC6xAuRExbnDHdIM3bqpJaQLXzMuWK8XR7jz/ooPsMUNRzp7BWdLJycoiz6VSw6OHBKs6MBg7GyKgpQqMR96LzPbn7P9IUgHV8ny8lV46G7ihNQ9zmWtWK23K+z4bDpSE1xobFAxGhk1PxJc99hfgihkHyIkA5keao4HIVbC2DqlZ+lFwNCntUrrSYoyretfhjuaqe0b80P3pjPE/+q/f5eFuwUUMOWsOQ4SNUIAwJOJmWl6cPY1Lj5hmmpOSrjHl/VCa3t5zBr+Lvb66+vvr5/jeh9n6lyFeNRodkVnktfSlOJrPZ5BQbtWyauK529xJAERrk8smTXUqPB1K0mFZOljBUY1C0PiBOxyvns5ez2Q+enJ/Nvl2lWmWYPSC9liLzSmtZ2ADuj5g6Xxl2UpwNU+kop6BGh4OtgWdhCzScaak3ShynH6LCowUHS1Jezr1sac43EU8nlv4GfFqHTMoGAAA=".strip()
+    DEFAULT_CONFIG_GZIP = "H4sIAHgJjGoC/51UwW7bRhC98yu2zMUObMmBYyAw0IPb2k3QFgjaFC1qBcJSHJGrXe4yu0s65B/0Vl9611EHH4oAOhS9LfRfnVnKttoYTlGdyOVq3nsz781lrYx/mzxhZ6wIa5uFlWYVFAtQoDfXzPVh3UIBklVhZcHDiK4qXuObB1VBD94zegkrecqeHSVzo/3UiR7Y5/R6XxlYazRXLXeeFy4sC/54reNECQ3TK5H7EmsdD6XmoBzy+pl50AWoDjRTYdXiEThAjrpD6mGtNtf/lfJxAi0g54pbCfaO+i0e1sotYoWVY1LU3Huuw9J5dovD6rD2vqNW3WhgdG8XeDinnvK85D58uOupi3dLeM9zmIkqLJVwbG4sPvmmyrhmwlGJWo1Y2oFS5iplLS86lj65wN/RUfqIMkBt6azjOo0wLxIzmzUWlczgVurMKGNR63DtgQvbXrxIkksUXg42qa0pLK/YvPHYh7AsTU+S/pIurEjUPCwXykiG7VlZhBYs/OkXXIw+RTbnKNvIkX/vB86pd/NpK+AKqcx9PVo4o0ny3nmW4dx5TzP38ZFYLUB6JsNady0ys9RAFAHOITe8seXF/X6yRZoiEsnfBU4QaEpA9OFB/OQSuPXlu4ZLePuRRzApCiTKyqHHVzICdseoAseLsz97/YqV4abFzu00aBZuquiWCwyPcQesNDhlzjAAkqXjee70lRtHm46fjd81YLv0EAtLNAVrse395jpfoPLHrZ6W3tfudDwuwGBMR8W8P6yNdzmvRjk8DJPwWkwbq6gd/+fvyeXMVDVNQRgd24VT0zqsFNNoZZNl7M0PF/fDGUYZDfbyq4uT3TwwH9YVbpJw46OZwq/Y5Aodh19ALfDh+7PvttnDRYCTmFOL/ZA9LQ7Y11+wvUIUPOs87P8jalTvvAcJRCATmHCLYcSZKYN3dBepOSMlVwxZW8cz8pehdebwH3DP+wBL0ewtlSo6Li2P8ded8AbHcS81uoQE3AsDLUboKIXroehcD3bzR5ZhwSp8yBecOgfRy0JBTOdUiUqQiY9ux4y2aDlZjchjRXQaH7FXtCklph1T6zkdYlEKsN5pOG+8qbgXsnED5a2PxdaQMhpXLxp5CP/i/Kjvnicf830+rFcSqsEiVx8jv1MVK0QH7I3Kk/27rVKhu2JmSlr+hPuT0Lm5osR+E35/c/7t+S+b35i41ctZ3tQKJ8Rn0inuSraXTibpPn6oeF2Hpdwu8hhW8uVnW5Purq8YsphlDdUQu7uCo2FBf3k6mfzowLrJ5HWTKTHDTYWVXnI2c0IpXhiP0E8JOW80CSkO4gqzkIMXg8CoKuLMTYHzJljotWC75kdS/hNBf5om5cnU8RamtLgpvHj0N66jNKzsBwAA".strip()
 
     answer = input("[INFO] Would you like to create one? [Y/n]: ")
 
@@ -108,6 +108,9 @@ occurrence_marker_size = plot_config.get("occurrence_marker_size", 8)
 path_config = config.get("path", {})
 datumok_txt = path_config.get("datumok_txt", "datumok.txt")
 ftp_json = path_config.get("ftp_json", "tsf_viewer_ftp.json")
+
+earthquake_config = config.get("earthquake", {})
+api_url = earthquake_config.get("api_url", "https://geofon.gfz-potsdam.de/fdsnws/event/1/query")
 
 compression_config = config.get("compression", {})
 file_size_limit = compression_config.get("file_size_limit", 4)
@@ -1139,9 +1142,11 @@ class Viewer(QWidget):
             # 2. Előző jelölők eltávolítása
             self.clear_markers()
 
-            # 3. GFZ lekérdezés indítása és feldolgozása
+            # 3. API lekérdezés indítása és feldolgozása
             quakes = self.get_earthquake(target_date=target_dt)
             valid_quakes = [q for q in quakes if q.get("magnitude") is not None]
+
+            api_host = api_url.split("://")[-1].split("/", 1)[0]
 
             if valid_quakes:
                 import textwrap
@@ -1151,7 +1156,7 @@ class Viewer(QWidget):
 
                 event_id = closest_quake.get('event_id', 'N/A')
                 mag = closest_quake.get('magnitude_raw', 'N/A')
-                mag_type = closest_quake.get('mag_type', '')
+                mag_type = closest_quake.get('mag_type', 'N/A')
                 lat = closest_quake.get('latitude', 'N/A')
                 lon = closest_quake.get('longitude', 'N/A')
                 depth = closest_quake.get('depth', 'N/A')
@@ -1165,6 +1170,10 @@ class Viewer(QWidget):
                 <div style="color: #FF6666; font-family: monospace; font-size: {font_size}pt; padding: 6px;">
                     <b>[ EARTHQUAKE INFO ]</b><br>
                     <table style="color: #FF6666; font-family: monospace; font-size: {font_size}pt; border-collapse: collapse;">
+                        <tr>
+                            <td style="vertical-align: top; padding-right: 10px;"><b>Source:</b></td>
+                            <td style="vertical-align: top;"><b>{api_host}</b></td>
+                        </tr>
                         <tr>
                             <td style="vertical-align: top; padding-right: 10px;"><b>Event ID:</b></td>
                             <td style="vertical-align: top;"><b>{event_id}</b></td>
@@ -1199,7 +1208,8 @@ class Viewer(QWidget):
             else:
                 html_text = f"""
                 <div style="color: #FFAA00; font-family: monospace; font-size: {font_size}pt; font-weight: bold; padding: 6px;">
-                    [ EARTHQUAKE INFO ]<br>
+                    <b>[ EARTHQUAKE INFO ]</b><br>
+                    Source: {api_host} <br>
                     Target date: {target_dt.strftime('%Y.%m.%d. %H:%M:%S')}<br>
                     Earthquake not found
                 </div>
@@ -1785,14 +1795,14 @@ class Viewer(QWidget):
     # ------------------------------------------------------------------
     def get_earthquake(self, target_date: datetime = None):
         """
-        Lekéri a GEOFON FDSN webszervizéből a megadott időpontot megelőző 1 óra
+        Lekéri a egy FDSN webserviceből a megadott időpontot megelőző 1 óra
         földrengési adatait 'text' (pipe-al elválasztott) formátumban.
         """
         if target_date is None:
             target_date = datetime(2023, 5, 5, 5, 3, 0)
 
         start_time = target_date - timedelta(hours=1)
-        url = "https://geofon.gfz-potsdam.de/fdsnws/event/1/query"
+        url = api_url
         params = {
             "format": "text",
             "starttime": start_time.strftime("%Y-%m-%dT%H:%M:%S"),

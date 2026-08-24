@@ -9,8 +9,8 @@ Ahhoz hogy a scriptet futtatni lehessen szükséges:
 pip install pandas numpy pyqtgraph PyQt6 requests h5py
 ```
 
-## Konfigurációs fájlok (ftp.json, config.toml)
-A program egy tsf_viewer_ftp.json nevű állományból olvassa ki a log fájlok eléréséhez szükséges FTP adatokat. Ezt a program helyes működéséhez csatolnunk kell a projektmappába.
+## Konfigurációs fájlok (`tsf_viewer_ftp.json`, `tsf_viewer_config.toml`)
+A program egy `tsf_viewer_ftp.json` nevű állományból olvassa ki a log fájlok eléréséhez szükséges FTP adatokat. Ezt a program helyes működéséhez csatolnunk kell a projektmappába.
 
 A JSON szerkezete:
 ```
@@ -30,17 +30,17 @@ A JSON szerkezete:
 ```
 
 Illetve van pár változó, aminek az értékét mi magunk is megadhatjuk.
-Ezeket a config.toml fájl átírásával tehetjük meg.
+Ezeket a `tsf_viewer_config.toml` fájl átírásával tehetjük meg. Ha hiányzik a config, a program rákérdez, hogy kívánjuk-e legenerálni.
 
 ## Szükséges fájlok
 Ahhoz hogy az EXE állományt el tudjuk készíteni, ezekre lesz szükségünk:
 
-- tsf_viewer.py
-- tsf_converter.py
-- ftp_service.py
-- tsf_viewer.spec
-- icon.png
-- icon.ico
+- `tsf_viewer.py`
+- `tsf_converter.py`
+- `ftp_service.py`
+- `tsf_viewer.spec`
+- `icon.png`
+- `icon.ico`
 
 ## EXE legenerálása
 A pyinstaller segítségével lehetséges. Ha még nem tettük meg, telepíthetjük az első paranncsal. Ha megvan, a második parancs végzi el az EXE elkészítését:
@@ -49,5 +49,4 @@ A pyinstaller segítségével lehetséges. Ha még nem tettük meg, telepíthetj
     pip install pyinstaller
     pyinstaller tsf_viewer.spec
    ```
-Ha a folyamat befejeződött, az EXE fájlt a /dist mappában találjuk TSF_Viewer.exe néven.
-UPX használható, de sokat nem változtat a végső fájlméreten, illetve sokkal lassabb lesz a betöltés is.
+Ha a folyamat befejeződött, az EXE fájlt a `/dist` mappában találjuk `TSF_Viewer.exe` néven.
