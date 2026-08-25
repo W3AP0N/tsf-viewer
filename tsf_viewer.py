@@ -54,7 +54,7 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
         os._exit(0)
 
     print("\n" + "=" * 60)
-    print("CRITICAL ERROR:")
+    print("[CRITICAL ERROR]")
     print("=" * 60)
     traceback.print_exception(exc_type, exc_value, exc_traceback)
     print("=" * 60)
@@ -146,19 +146,19 @@ base_name, _ = os.path.splitext(filename)
 is_h5 = False
 
 if not os.path.isfile(filepath):
-    print(f"ERROR: File does not exist '{filepath}'")
+    print(f"[ERROR] File does not exist '{filepath}'")
     input("\n\nPress ENTER to exit...")
     sys.exit(1)
 
 if not filename.lower().endswith((".tsf", ".tsf.h5")):
-    print(f"ERROR: '{filename}' is not a '.tsf' or '.tsf.h5' file!")
+    print(f"[ERROR] '{filename}' is not a '.tsf' or '.tsf.h5' file!")
     input("\n\nPress ENTER to exit...")
     sys.exit(1)
 
 if len(sys.argv) >= 3:
     filepath2 = sys.argv[2]
     if not filepath2.endswith(".earthquake.tsf"):
-        print(f"ERROR: '{os.path.basename(filepath2)}' is not a '.earthquake.tsf' file!")
+        print(f"[ERROR] '{os.path.basename(filepath2)}' is not a '.earthquake.tsf' file!")
         input("\n\nPress ENTER to exit...")
         sys.exit(1)
 
@@ -174,10 +174,10 @@ print(f"Station: {station}")
 print(f"Sensor: {sensor}")
 
 if not os.path.exists(datumok_txt):
-    print("WARNING: 'datumok.txt' is missing")
+    print("[WARNING] 'datumok.txt' is missing")
 
 if not os.path.exists(ftp_json):
-    print("WARNING: 'tsf_viewer_ftp.json' is missing")
+    print("[WARNING] 'tsf_viewer_ftp.json' is missing")
 
 # =====================================================
 # Tengely azonosító segédfüggvény
@@ -253,7 +253,7 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
         target_path = path if os.path.exists(path) else os.path.join(h5_save_path, f_name)
 
         if not os.path.exists(target_path):
-            print(f"ERROR: File does not exist '{target_path}'")
+            print(f"[ERROR] File does not exist '{target_path}'")
             return np.array([]), np.empty((0, 0)), [], [], None, []
 
         is_h5 = True
@@ -277,7 +277,7 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
                 gaps_ret = list(h5f["gaps"][:]) if "gaps" in h5f else []
 
         except Exception as e:
-            print(f"ERROR while reading HDF5 file: {e}")
+            print(f"[ERROR] While reading HDF5 file: {e}")
             return np.array([]), np.empty((0, 0)), [], [], None, []
 
         return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
@@ -389,7 +389,7 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
                         gaps_ret = list(h5f["gaps"][:]) if "gaps" in h5f else []
 
                 except Exception as e:
-                    print(f"ERROR while reading HDF5 file: {e}")
+                    print(f"[ERROR] While reading HDF5 file: {e}")
                     return empty_return
 
                 return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
@@ -403,7 +403,7 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
                 path, skiprows=data_start_line, sep=r"\s+", header=None, comment="[", on_bad_lines="skip", engine="c"
             )
     except Exception as e:
-        print(f"ERROR while reading file: {e}")
+        print(f"[ERROR] While reading file: {e}")
         df = pd.DataFrame()
         input("\n\nPress ENTER to exit...")
         sys.exit(1)
@@ -471,7 +471,7 @@ if len(sys.argv) >= 3:
             filepath2, handle_gaps=False, replace_9999=True
         )
     except Exception as e:
-        print(f"ERROR while loading second file: {e}")
+        print(f"[ERROR] While loading second file: {e}")
 
 print(f"\nSamples: {len(data)}")
 print(f"Channels: {len(channel_names)}\n")
@@ -769,7 +769,7 @@ class Viewer(QWidget):
                         'idx': idx, 'timestamp': ts, 'date_str': display_date_str, 'text': event_text
                     })
             except Exception as e:
-                print(f"ERROR while processing date ({date_str}): {e}")
+                print(f"[ERROR] While processing date ({date_str}): {e}")
 
         if self.loaded_events:
             print(f"Events mapped to plot: {len(self.loaded_events)}\n")
@@ -816,7 +816,7 @@ class Viewer(QWidget):
                         else:
                             events[date] = new_text
             except Exception as e:
-                print(f"ERROR while reading file {csv_path}: {e}")
+                print(f"[ERROR] While reading file {csv_path}: {e}")
 
         try:
             # Fájlok generálása
@@ -1238,7 +1238,7 @@ class Viewer(QWidget):
 
         except Exception as e:
             self.is_earthquake_active = False
-            print(f"ERROR while getting data for earthquake: {str(e)}")
+            print(f"[ERROR] While getting data for earthquake: {str(e)}")
 
     def fit_view_to_data(self):
         """
@@ -1731,7 +1731,7 @@ class Viewer(QWidget):
             self.update_event_markers_position()
 
         except Exception as e:
-            print(f"ERROR: {str(e)}")
+            print(f"[ERROR] {str(e)}")
 
     def eventFilter(self, obj, event):
         # 1. Csak a billentyűlenyomásokat vizsgáljuk
@@ -1856,7 +1856,7 @@ class Viewer(QWidget):
             return quakes
 
         except Exception as e:
-            print(f"ERROR: {str(e)}")
+            print(f"[ERROR] {str(e)}")
 
         return []
 
