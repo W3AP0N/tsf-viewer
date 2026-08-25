@@ -20,7 +20,7 @@ Ahhoz, hogy a scriptet futtatni lehessen, szükséges:
 - A legfrissebb python verzió (de legalább Python 3.11 szükséges)
 - A következő package-ek telepítése virtuális környezetben (lásd [EXE legenerálása](#exe-legenerálása-windows)):
 
-`pandas numpy pyqtgraph PyQt6 requests h5py`
+    `pandas numpy pyqtgraph PyQt6 requests h5py`
 
 ## Konfigurációs fájlok
 - A program egy `tsf_viewer_ftp.json` nevű állományból olvassa ki a log fájlok eléréséhez szükséges FTP adatokat. Ezt a program helyes működéséhez csatolnunk kell a projektmappába.
