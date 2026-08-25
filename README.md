@@ -42,20 +42,20 @@ Ahhoz hogy az EXE állományt el tudjuk készíteni, ezekre lesz szükségünk:
 ## <p id="exe">EXE legenerálása (Windows)</p>
 1. Hozzunk létre egy virtuális python környezetet a projekt mappában:
     ```bash
-      python -m venv venv
+    python -m venv venv
     ```
 2. Győződjünk meg, hogy a mappában megtalálhatóak a [szükséges fájlok](#fajlok).
 3. Indítsuk el a virtuális környezetet:
     ```bash
-        venv\Scripts\activate.bat
+    venv\Scripts\activate.bat
     ```
 4. Telepítsük a szükséges package-eket:
     ```bash
-        pip install pandas numpy pyqtgraph PyQt6 requests h5py pyinstaller
+    pip install pandas numpy pyqtgraph PyQt6 requests h5py pyinstaller
     ```
 5. Futtassuk a következő parancsot:
    ```bash
-      pyinstaller tsf_viewer.spec
+   pyinstaller tsf_viewer.spec
    ```
 6. Ha a folyamat befejeződött, az EXE fájlt a `/dist` mappában találjuk `TSF_Viewer.exe` néven.
 
@@ -71,7 +71,7 @@ a fájl kiterjesztése csak `.earthquake.tsf` lehet.
  
     Szintaxis:
    ```bash
-      python tsf_viewer.py file.tsf file.earthquake.tsf
+   python tsf_viewer.py file.tsf file.earthquake.tsf
    ```
 
 ## Fájlnév specifikációk
