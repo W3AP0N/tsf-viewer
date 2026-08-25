@@ -46,12 +46,12 @@ os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen'
 # =====================================================
 def global_exception_handler(exc_type, exc_value, exc_traceback):
     """
-    Globális hibakezelő: elkap minden kezeletlen kivételt a programban,
-    kiírja a hiba részleteit, majd várakozik egy gombnyomásra kilépés előtt.
+    Globális hibakezelő:
+    Elkap minden kezeletlen kivételt a programban, majd kiírja a hiba részleteit.
     """
     # A Ctrl+C (KeyboardInterrupt) megszakítást hagyjuk simán lefutni
     if issubclass(exc_type, KeyboardInterrupt):
-        os._exit(0)  # Kényszerített, azonnali kilépés
+        os._exit(0)
 
     print("\n" + "=" * 60)
     print("CRITICAL ERROR:")
@@ -200,8 +200,8 @@ def animated_loading(message):
     """Egységes kontextuskezelő a töltési animációhoz és időméréshez."""
     loading_stop = threading.Event()
 
+    """Segédfüggvény az idő formázására (1 perc felett XmYY.YYYs formátum)."""
     def _format_time(seconds: float) -> str:
-        """Segédfüggvény az idő formázására (1 perc felett XmYY.YYYs formátum)."""
         if seconds >= 60:
             mins, secs = divmod(seconds, 60)
             return f"{int(mins)}m{secs:06.3f}s"
@@ -248,8 +248,8 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
     # =========================================================================
     # 0. HA KIFEJEZETTEN HDF5 (.h5 / .tsf.h5) FÁJLMANCSEST ADTAK MEG
     # =========================================================================
-    if path.endswith(".tsf.h5") or path.endswith(".h5"):
-        # Pontosan ott keressük, ahonnan megadták (ha relatív, akkor a futtatási mappában, vagy ha abszolút, akkor ott)
+    if path.endswith(".tsf.h5"):
+        # Pontosan ott keressük, ahonnan megadták (ha relatív, akkor a projekt mappában, vagy ha abszolút, akkor ott)
         target_path = path if os.path.exists(path) else os.path.join(h5_save_path, f_name)
 
         if not os.path.exists(target_path):
@@ -283,9 +283,9 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
         return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
 
     # =========================================================================
-    # 0/B. HA .TSF FÁJL UTÁN NÉZZÜK: LÉTEZIK-E A H5_SAVE_PATH-BAN A .TSF.H5?
+    # 0/B. LÉTEZIK-E A H5_SAVE_PATH-BAN A .TSF.H5 VERZIÓ
     # =========================================================================
-    h5_filename = f_name + ".h5"  # pl. "tpso...tsf.h5"
+    h5_filename = f_name + ".h5"  # pl. "tpso_hrtm1.tsf.h5"
     h5_in_save_path = os.path.join(h5_save_path, h5_filename)
 
     if os.path.exists(h5_in_save_path):
@@ -298,7 +298,7 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
         )
 
     # =========================================================================
-    # 1. FEJLÉC BEOLVASÁSA (NORMÁL .TSF FÁJL ESETÉN)
+    # 1. HEADER (NORMÁL .TSF FÁJL ESETÉN)
     # =========================================================================
     channel_names, units = [], []
     increment = None
@@ -355,7 +355,7 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
     file_size_gb = file_size_bytes / (1024 ** 3)
 
     # =========================================================================
-    # A) NAGY FÁJL KEZELÉSE (> 4 GB) -> HDF5 BINÁRIS UTÓLAGOS BETÖLTÉS VAGY KIHAGYÁS
+    # A) NAGY FÁJL KEZELÉSE (> 4 GB) -> HDF5 BINÁRIS UTÓLAGOS BETÖLTÉS
     # =========================================================================
     if file_size_gb > size_limit_gb:
         h5_path = os.path.join(h5_save_path, f_name + ".h5")
@@ -395,7 +395,7 @@ def load_tsf(path, handle_gaps=False, replace_9999=False, size_limit_gb=file_siz
                 return timestamps, data_matrix, channel_names, units, increment_ret, gaps_ret
 
     # =========================================================================
-    # B) KIS/KÖZEPES FÁJL KEZELÉSE (VAGY NAGY FÁJL KIFEJEZETTEN KÉRT KIHAGYÁSA)
+    # B) NORMÁL KIS FÁJL KEZELÉSE (VAGY NAGY FÁJL KIFEJEZETTEN KÉRT KIHAGYÁSA)
     # =========================================================================
     try:
         with animated_loading(f"Reading '{f_name}'"):
@@ -530,11 +530,11 @@ class Viewer(QWidget):
         self.method_state = 0
         self.show_gap_borders = False
 
-        # --- 2. FELÜLET (UI) ÉS GRAFIKON FELÉPÍTÉSE ---
+        # --- 2. UI ÉS GRAFIKON FELÉPÍTÉSE ---
         self._setup_ui()
         self._setup_plot()
 
-        # --- 3. ESEMÉNYEK (EVENTS) LETÖLTÉSE ÉS FELDOLGOZÁSA ---
+        # --- 3. ESEMÉNY FÁJLOK LETÖLTÉSE ÉS FELDOLGOZÁSA ---
         events_dict = self._fetch_and_parse_events()
 
         # Keresünk egy 8-jegyű dátumot
@@ -559,7 +559,7 @@ class Viewer(QWidget):
         has_multi_year = bool(getattr(self, 'loaded_events', []))
         self.btn_events.setEnabled(has_single_day or has_multi_year)
 
-        # --- 4. GRAFIKON ADATAINAK ÉS HÉZAGJAINAK (GAPS) KIRAJZOLÁSA ---
+        # --- 4. GRAFIKON ADATOK ÉS GAP-EK KIRAJZOLÁSA ---
         self._draw_initial_data()
         self._setup_gaps()
 
@@ -567,6 +567,7 @@ class Viewer(QWidget):
         self.update_event_markers()
         self.current = 0
         self.change_channel(0)
+        print("Documentation at https://github.com/W3AP0N/tsf-viewer/wiki")
 
     def _setup_ui(self):
         """Létrehozza az ablakot, a legördülő menüt, a gyorsgombokat és a gombsort."""
@@ -611,7 +612,7 @@ class Viewer(QWidget):
         self.btn_index = _create_btn("[Left click] Get index", None, enabled=False)
         self.btn_eq = _create_btn("[E + Left click] Get earthquake", None, enabled=False)
 
-        # Állapotjelző címke
+        # Állapotjelző sor
         self.lbl_method = QLabel("")
         self.lbl_method.setStyleSheet(
             "font-weight: bold; color: #00FF00; background-color: #222; padding: 4px 8px; border-radius: 4px;")
@@ -631,7 +632,7 @@ class Viewer(QWidget):
         self.plot.scene().sigMouseClicked.connect(self.on_plot_clicked)
 
     def _setup_gaps(self):
-        """Hézagokat jelző régiók (LinearRegionItem) inicializálása."""
+        """Adathiányokat jelző területek inicializálása."""
         self.gap_regions = []
         transparent_pen = pg.mkPen(color=(0, 0, 0, 0))
 
@@ -648,7 +649,7 @@ class Viewer(QWidget):
             self.btn_gaps.setEnabled(False)
 
     def _draw_initial_data(self):
-        """Fő görbék és rétegek grafikonhoz adása."""
+        """Görbe és egyéb rétegek grafikonhoz adása."""
         self.curve = self.plot.plot(self.t_array, self.d_array[:, 0], pen=pg.mkPen("r", width=line_width))
         self.curve.setDownsampling(auto=True)
         self.curve.setClipToView(True)
@@ -660,9 +661,9 @@ class Viewer(QWidget):
     # Adatbetöltés és feldolgozás
     # ------------------------------------------------------------------
     def _process_single_day_events(self, events, base_name):
-        """Kiválogatja az 1 napos nézethez tartozó eseményeket a fájlnév alapján."""
+        """Kiválogatja az egynapos nézethez tartozó eseményeket a fájlnév alapján."""
 
-        # Szigorú illeszkedés: csak független 8 számjegy (körülötte nincs más számjegy vagy kötőjel)
+        # Szigorú illeszkedés: csak egybfüggő 8 számjegy (körülötte nincs más szám vagy kötőjel)
         match = re.search(r"(?<![\d-])\d{8}(?![\d-])", base_name)
         if not match:
             print("No single date in filename")
@@ -737,7 +738,7 @@ class Viewer(QWidget):
         self.show_event_label = True
 
     def _process_multi_year_events(self, events):
-        """Kigyűjti a grafikonra pozicionálandó (többéves) eseményjelölőket."""
+        """Kigyűjti a grafikonra pozicionálandó eseményjelölőket."""
         print("Multi day file detected")
         self.loaded_events = []
         if len(self.t_array) == 0: return
@@ -774,7 +775,7 @@ class Viewer(QWidget):
             print(f"Events mapped to plot: {len(self.loaded_events)}\n")
 
     def _fetch_and_parse_events(self):
-        """Letölti a szerverről a logokat, és kinyeri az egyező eseményeket egy szótárba."""
+        """Letölti a szerverről a logokat, és kinyeri az egyező eseményeket egy dictionary-be."""
         run_id = uuid.uuid4().hex[:8]
         datumok_csv = f"datumok_{run_id}.csv"
         log_txt = f"log_for_{self.sensor.lower()}_{run_id}.txt"
@@ -850,7 +851,7 @@ class Viewer(QWidget):
     # GUI frissítés
     # ------------------------------------------------------------------
     def position_event_popup(self, x_val, y_val):
-        """Kiszámolja az eseményjelölő pontos pixelpozícióját és alá középre igazítja a dobozt."""
+        """Kiszámolja az eseményjelölő pontos pixelpozícióját és a helyére igazítja a dobozt."""
         popup = getattr(self, 'event_popup', None)
 
         # 1. Korai kilépés, ha nincs popup vagy nem látható
@@ -879,9 +880,9 @@ class Viewer(QWidget):
 
     def update_event_markers(self):
         """
-        Inicializálja és frissíti az eseményjelölőket és a
-        függőleges segédvonalakat, beállítja az interaktív kurzoreseményeket,
-        valamint szabályozza azok láthatóságát és pozícióját a nézet állapota alapján.
+        Inicializálja és frissíti az eseményjelölőket és a függőleges segédvonalakat,
+        beállítja az interaktív kurzoreseményeket,valamint szabályozza azok láthatóságát
+        és pozícióját a nézet állapota alapján.
         """
         events = getattr(self, 'loaded_events', None)
 
@@ -955,8 +956,8 @@ class Viewer(QWidget):
     def update_event_markers_position(self):
         """
         Az eseményjelölő ikonokat mindig a látható Y-tartomány legtetejére pozicionálja,
-        frissíti a hozzájuk tartozó függőleges segédvonalakat,
-        valamint igazítja az aktív infóablak pozícióját.
+        frissíti a hozzájuk tartozó függőleges segédvonalakat, valamint igazítja az
+        aktív popup pozícióját.
         """
         markers = getattr(self, 'event_markers', None)
         events = getattr(self, 'loaded_events', None)
@@ -992,8 +993,6 @@ class Viewer(QWidget):
         y_coords = [safe_y_max] * len(x_coords)
 
         # 4. Adatok frissítése
-        # FIGYELEM: NINCS vb.blockSignals(True)! Erre nincs szükség, mert az item-eket
-        # ignoreBounds=True-val adtuk hozzá, így a setData nem vált ki újabb RangeChanged eseményt.
         markers.setData(x=x_coords, y=y_coords)
 
         lines = getattr(self, 'event_lines', None)
@@ -1008,8 +1007,8 @@ class Viewer(QWidget):
 
     def update_method_display(self):
         """
-        Frissíti a 2. adatfájl kirjazolását, a feliratokat,
-        a grafikon címét, valamint automatikusan ki- vagy bekapcsolja a 'btn_method' gombot.
+        Frissíti a 2. adatfájl kirjazolását, a feliratokat, a grafikon címét,
+        valamint automatikusan ki- vagy bekapcsolja a 'btn_method' gombot.
         """
         # 1. Alapvető ellenőrzések és aktuális csatorna meghatározása
         current_idx = getattr(self, 'current', 0)
@@ -1073,7 +1072,7 @@ class Viewer(QWidget):
                 else:
                     method_text = "ACTIVE"
 
-            # (DRY) Adatok kinyerése a kiválasztott oszlopokból egyetlen helyen!
+            # Adatok kinyerése a kiválasztott oszlopokból egyetlen helyen
             for col_idx in cols_to_plot:
                 y_vals = d2[:, col_idx]
                 valid_mask = ~np.isnan(y_vals)
@@ -1110,7 +1109,7 @@ class Viewer(QWidget):
     def show_earthquake_on_plot(self, pos):
         """
         Lekéri és megjeleníti a megadott kattintási pozícióhoz tartozó legközelebbi
-        földrengés adatait a grafikonon (piros pötty + HTML táblázatos információs ablak).
+        földrengés adatait a grafikonon egy popup-ban.
         """
         try:
             # 1. Kattintott koordináta és legközelebbi adatminta megkeresése
@@ -1215,7 +1214,7 @@ class Viewer(QWidget):
                 </div>
                 """
 
-            # 4. Pirosas pötty kirajzolása (csak ha van érvényes Y érték)
+            # 4. Piros pötty kirajzolása (csak ha van érvényes Y érték)
             if has_valid_y:
                 self.click_dot = pg.ScatterPlotItem(
                     size=12,
@@ -1243,8 +1242,8 @@ class Viewer(QWidget):
 
     def fit_view_to_data(self):
         """
-        Az ábra tartalmát az ablakhoz igazítja úgy, hogy az X és Y tengelyen is
-        hagy egy kis margót (puffert) a széleken, és megelőzi az autoRange bugot.
+        Az ábra tartalmát az ablakhoz igazítja úgy, hogy az X és Y
+        tengelyen is hagy egy kis margót a széleken
         """
         if self.t_array is None or self.d_array is None or len(self.t_array) == 0:
             return
@@ -1256,7 +1255,7 @@ class Viewer(QWidget):
         if not np.any(valid_mask):
             return
 
-        # --- X tengely margó számítása (2% puffer kétoldalt, hogy ne a szélétől induljon) ---
+        # --- X tengely margó számítása ---
         x_min_raw, x_max_raw = self.t_array[0], self.t_array[-1]
         x_span = x_max_raw - x_min_raw
         x_margin = x_span * 0.02 if x_span != 0 else 1.0
@@ -1264,7 +1263,7 @@ class Viewer(QWidget):
         x_min_padded = x_min_raw - x_margin
         x_max_padded = x_max_raw + x_margin
 
-        # --- Y tengely margó számítása (5% puffer alul-felül) ---
+        # --- Y tengely margó számítása ---
         valid_y = channel_data[valid_mask]
         y_min_raw, y_max_raw = np.min(valid_y), np.max(valid_y)
 
@@ -1291,7 +1290,7 @@ class Viewer(QWidget):
             self.update_event_markers_position()
 
     def clear_markers(self):
-        """Eltávolítja a grafikonról a kattintási jelölőpontot és a címkét."""
+        """Eltávolítja a grafikonról a popup-okat."""
         if getattr(self, 'click_dot', None) is not None:
             self.plot.removeItem(self.click_dot)
             self.click_dot = None
@@ -1318,7 +1317,7 @@ class Viewer(QWidget):
         bottom_axis = self.plot.getAxis("bottom")
         bottom_axis.enableAutoSIPrefix(False)
 
-        # Aktualizáljuk a mértékegységet
+        # Frissítjük a mértékegységet
         current_unit = str(self.ch_units[index]) if index < len(self.ch_units) else ""
         self.plot.setLabel("left", current_unit)
         self.plot.setLabel("bottom", "time")
@@ -1334,14 +1333,12 @@ class Viewer(QWidget):
         if getattr(self, 'last_clicked_idx', None) is not None:
             idx = int(self.last_clicked_idx)
 
-            # Explicit típuskonverzió (Windows / PySide C++ kompatibilitás)
+            # Explicit típuskonverzió
             exact_timestamp = float(self.t_array[idx])
             new_y = float(y[idx])
             has_valid_y = not np.isnan(new_y)
 
-            # =========================================================================
             # A) HA FÖLDRENGÉS INFO VAN AKTÍVAN (is_earthquake_active == True)
-            # =========================================================================
             if getattr(self, 'is_earthquake_active', False):
                 vb = self.plot.plotItem.vb
                 y_max = float(vb.viewRange()[1][1])
@@ -1360,9 +1357,7 @@ class Viewer(QWidget):
                     self.click_label.setPos(exact_timestamp, pos_y)
                     self.click_label.update()
 
-            # =========================================================================
             # B) HA SIMA ADATMINTA (sárga pötty + sárga label) VAN AKTÍVAN
-            # =========================================================================
             else:
                 # Sárga pötty áthelyezése
                 if getattr(self, 'click_dot', None) is not None:
@@ -1372,12 +1367,12 @@ class Viewer(QWidget):
                     else:
                         self.click_dot.hide()
 
-                # Címke HTML szövegének ÉS pozíciójának frissítése az új adatra + mértékegységre
+                # Címke HTML szövegének és pozíciójának frissítése az új adatra + mértékegységre
                 if getattr(self, 'click_label', None) is not None:
-                    # A tengely lekérdezése HELYETT közvetlenül az új csatorna mértékegységét használjuk!
+                    # A tengely lekérdezése helyett közvetlenül az új csatorna mértékegységét használjuk!
                     unit_display = current_unit if current_unit else "Value"
 
-                    # Biztonságos időbélyeg formázás
+                    # Időbélyeg formázás
                     try:
                         dt = datetime.fromtimestamp(exact_timestamp, tz=timezone.utc)
                         date_str = dt.strftime('%Y.%m.%d.')
@@ -1403,21 +1398,18 @@ class Viewer(QWidget):
         self.plot.update()
 
     def toggle_gap_borders(self):
-        """
-        Ki- és bekapcsolja a gap-eket jelölő tartományok szélein lévő
-        határvonalak láthatóságát.
-        """
+        """Ki- és bekapcsolja a gap-eket jelölő részek szélén lévő határvonalak láthatóságát."""
         # 1. Állapot megfordítása (True <-> False)
         self.show_gap_borders = not getattr(self, 'show_gap_borders', False)
 
-        # 2. Megfelelő toll (pen) kiválasztása a jelenlegi állapot alapján
+        # 2. Megfelelő pen kiválasztása a jelenlegi állapot alapján
         new_pen = (
             pg.mkPen((255, 255, 0, 190), width=1)
             if self.show_gap_borders
             else pg.mkPen(color=(0, 0, 0, 0))
         )
 
-        # 3. Határvonalak frissítése az összes adathiány régióban
+        # 3. Határvonalak frissítése a gap-eknél
         for region in getattr(self, 'gap_regions', []):
             for line in region.lines:
                 line.setPen(new_pen)
@@ -1427,7 +1419,7 @@ class Viewer(QWidget):
         """
         Ciklikusan lépteti vagy ki/be kapcsolja az események kijelzését a fájl típusa alapján.
         - Többéves fájlnál (3 állapot): 0 -> Csak jelölők | 1 -> Jelölők + Vonalak | 2 -> Minden rejtve (beleértve a popupot is)
-        - Egynapos fájlnál (2 állapot): Vált az infóablak láthatósága között (Látható <-> Rejtve)
+        - Egynapos fájlnál (2 állapot): Vált az infóablak láthatósága között (Látható <-> Elrejtve)
         """
         is_multi_year = bool(getattr(self, 'loaded_events', None))
 
@@ -1439,20 +1431,20 @@ class Viewer(QWidget):
         popup = getattr(self, 'event_popup', getattr(self, 'event_label', None))
 
         if is_multi_year:
-            # === TÖBBÉVES FÁJL: 3-lépcsős ciklikus váltás (0 -> 1 -> 2 -> 0) ===
+            # TÖBBÉVES FÁJL: 3 iteráció
             current_state = getattr(self, 'event_toggle_state', 0)
             self.event_toggle_state = (current_state + 1) % 3
 
             show_markers = self.event_toggle_state in (0, 1)
             show_lines = self.event_toggle_state == 1
         else:
-            # === EGYNAPOS FÁJL: Egyszerű 2-lépcsős (ki/be) kapcsolás ===
+            # EGYNAPI FÁJL: Egyszerű ki/be kapcsolás
             self.show_event_label = not getattr(self, 'show_event_label', True)
 
             show_markers = False
             show_lines = False
 
-        # --- LÁTHATÓSÁGOK BEÁLLÍTÁSA ---
+        # LÁTHATÓSÁGOK BEÁLLÍTÁSA
         if markers:
             markers.setVisible(show_markers)
         if lines:
@@ -1498,9 +1490,7 @@ class Viewer(QWidget):
         self.update_method_display()
 
     def esc_clear(self):
-        """
-        Elrejti az összes aktív popup-ot a grafikonról esc billentyű lenyomására
-        """
+        """Elrejti az összes aktív popup-ot a grafikonról ESC billentyű lenyomására"""
         # Index lekérdezés elrejtése
         if hasattr(self, 'click_dot') and self.click_dot is not None:
             try:
@@ -1526,9 +1516,7 @@ class Viewer(QWidget):
 
         # Earthquake info elrejtése
         self.e_key_pressed = False  # E-gomb mód kikapcsolása
-        if hasattr(self, 'clear_earthquake') and callable(self.clear_earthquake):
-            self.clear_earthquake()  # Ha van külön földrengés törlő metódusod
-        elif hasattr(self, 'eq_item') and self.eq_item is not None:
+        if hasattr(self, 'eq_item') and self.eq_item is not None:
             try:
                 self.plot.removeItem(self.eq_item)
             except Exception:
@@ -1553,8 +1541,8 @@ class Viewer(QWidget):
         """
         Kezeli a grafikonra való kattintásokat:
         - Bal kattintás + 'E' billentyű: földrengés adatok megjelenítése a kattintott pontban.
-        - Felső sávba kattintás (eseményjelölők): esemény infóablak (popup) megnyitása/bezárása.
-        - Görbére kattintás: a legközelebbi adatminta kijelölése (sárga pötty + adat címke).
+        - Felső sávba kattintás (eseményjelölők): esemény popup megnyitása/bezárása.
+        - Görbére kattintás: a legközelebbi adatminta kijelölése (sárga pötty + popup).
         - Ismételt kattintás ugyanarra a pontra: kijelölés megszüntetése (toggle ki).
         """
         left_button = getattr(Qt.MouseButton, 'LeftButton', getattr(Qt, 'LeftButton', None))
@@ -1568,7 +1556,7 @@ class Viewer(QWidget):
         if not plot_rect.contains(pos):
             return
 
-        # 2. Földrengés gomb mód kezelése ('E' billentyű)
+        # 2. Földrengés mód kezelése ('E' billentyű)
         if getattr(self, 'e_key_pressed', False):
             self.show_earthquake_on_plot(pos)
             return
@@ -1598,7 +1586,7 @@ class Viewer(QWidget):
             if is_near_top and not markers_visible:
                 return
 
-            # 3. Eseményjelölőre kattintás vizsgálata
+            # Eseményjelölőre kattintás vizsgálata
             clicked_event = None
             loaded_events = getattr(self, 'loaded_events', [])
 
@@ -1613,7 +1601,7 @@ class Viewer(QWidget):
                     if abs(closest_ev['timestamp'] - clicked_x) <= threshold:
                         clicked_event = closest_ev
 
-            # 4. Koordináták és index meghatározása
+            # Koordináták és index meghatározása
             if clicked_event:
                 idx = clicked_event['idx']
                 exact_timestamp = clicked_event['timestamp']
@@ -1630,7 +1618,7 @@ class Viewer(QWidget):
                     self.event_popup.hide()
                 self.update_event_markers_position()
 
-            # 5. Meglévő kijelölések takarítása
+            # Meglévő kijelölések takarítása
             self.clear_markers()
             popup = getattr(self, 'event_popup', None)
             if popup:
@@ -1650,7 +1638,7 @@ class Viewer(QWidget):
 
             self.last_clicked_idx = idx
 
-            # 6. Megjelenítés: Esemény ablak (popup) VS. Sima adatminta pont
+            # Megjelenítés: Esemény ablak (popup) és sima adatminta pont
             if clicked_event:
                 raw_text = str(clicked_event.get('text', 'No data'))
                 formatted_text = raw_text.replace('\n', '<br>')
@@ -1769,9 +1757,7 @@ class Viewer(QWidget):
         return super().eventFilter(obj, event)
 
     def keyPressEvent(self, event):
-        """
-        Kezeli a billentyűlenyomásokat
-        """
+        """Kezeli a billentyűlenyomásokat"""
         key_e = getattr(getattr(Qt, 'Key', Qt), 'Key_E', None)
 
         if event.key() == key_e:
@@ -1780,9 +1766,7 @@ class Viewer(QWidget):
         super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
-        """
-        Kezeli a billentyűk felengedését
-        """
+        """Kezeli a billentyűk felengedését"""
         key_e = getattr(getattr(Qt, 'Key', Qt), 'Key_E', None)
 
         if event.key() == key_e:
@@ -1796,7 +1780,7 @@ class Viewer(QWidget):
     def get_earthquake(self, target_date: datetime = None):
         """
         Lekéri a egy FDSN webserviceből a megadott időpontot megelőző 1 óra
-        földrengési adatait 'text' (pipe-al elválasztott) formátumban.
+        földrengési adatait 'text' (pipe-al (|) elválasztott) formátumban.
         """
         if target_date is None:
             target_date = datetime(2023, 5, 5, 5, 3, 0)
@@ -1817,13 +1801,13 @@ class Viewer(QWidget):
             quakes = []
             reader = csv.reader(io.StringIO(response.text), delimiter='|')
 
-            # Segédfüggvény az oszlopok biztonságos kiolvasásához
+            # Segédfüggvény az oszlopok kiolvasásához
             def _get_field(row, idx):
                 return row[idx].strip() if len(row) > idx and row[idx].strip() else "--"
 
             for row in reader:
                 try:
-                    # Érvénytelen vagy fejlécsorok kiszűrése
+                    # Érvénytelen sorok kiszűrése
                     if not row or row[0].startswith("#") or len(row) < 2:
                         continue
 
