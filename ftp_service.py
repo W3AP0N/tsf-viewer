@@ -47,7 +47,7 @@ DATE_REGEX = re.compile(rf'(?<!\()\b(?:{p1}|{p2}|{p3}|{p4})\b(?!\))')
 def download_log(sensor, output_file):
     """FTP kapcsolatot létesít a megadott szenzorhoz, és letölti a log fájlt."""
     if sensor not in FTP_CONFIG:
-        print(f"WARNING: No FTP data for sensor '{sensor}'")
+        print(f"[WARNING] No FTP data for sensor '{sensor}'")
         return False
 
     sensor_info = FTP_CONFIG[sensor]
@@ -73,11 +73,11 @@ def download_log(sensor, output_file):
         return True
 
     except all_errors as e:
-        print(f"FTP ERROR while processing: {e}")
+        print(f"[FTP ERROR] While processing: {e}")
         return False
 
     except IOError as e:
-        print(f"ERROR while writing local file: {e}")
+        print(f"[ERROR] While writing local file: {e}")
         return False
 
 def convert_to_csv(input_filepath, output_filepath):

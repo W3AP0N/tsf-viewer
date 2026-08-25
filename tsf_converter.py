@@ -168,7 +168,7 @@ def convert_tsf_to_h5(
         data_start_line = data_start_line or start
 
     if data_start_line == 0:
-        print(f"ERROR: Could not find [DATA] block in file '{tsf_path}'")
+        print(f"[ERROR] Could not find [DATA] block in file '{tsf_path}'")
         sys.exit(1)
 
     tmp_h5_path = h5_path + ".tmp"
@@ -323,7 +323,7 @@ def convert_tsf_to_h5(
     except Exception as e:
         if os.path.exists(tmp_h5_path):
             os.remove(tmp_h5_path)
-        print(f"\nERROR while converting to binary: {e}")
+        print(f"\n[ERROR] While converting to binary: {e}")
         sys.exit(1)
 
 # =====================================================
@@ -336,11 +336,11 @@ if __name__ == "__main__":
 
     input_file = sys.argv[1]
     if not os.path.exists(input_file):
-        print(f"ERROR: File does not exist '{input_file}'")
+        print(f"[ERROR] File does not exist '{input_file}'")
         sys.exit(1)
 
     if not input_file.lower().endswith(".tsf"):
-        print(f"ERROR: '{input_file}' is not a .tsf file!")
+        print(f"[ERROR] '{input_file}' is not a .tsf file!")
         sys.exit(1)
 
     convert_tsf_to_h5(input_file, ask_confirmation=False)
