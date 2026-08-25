@@ -604,7 +604,7 @@ class Viewer(QWidget):
             return btn
 
         self.btn_reset = _create_btn("[R] Reset view", self.reset)
-        self.btn_gaps = _create_btn("[G] Show/hide gap boarders", self.toggle_gap_borders)
+        self.btn_gaps = _create_btn("[G] Show/hide gap borders", self.toggle_gap_borders)
         self.btn_events = _create_btn("[I] Show/hide event(s)", self.toggle_event_label)
         self.btn_method = _create_btn("[M] Toggle Method", self.toggle_method, enabled=False)
         self.btn_ch = _create_btn("[A-Z] Quick channel select", None, enabled=False)
