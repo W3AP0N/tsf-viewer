@@ -1,35 +1,50 @@
+# Tartalomjegyzék
+* [TSF Viewer - Telepítési útmutató](#tsf-viewer---telepítési-útmutató)
+   * [Alapfeltételek](#alapfeltételek)
+   * [Konfigurációs fájlok](#konfigurációs-fájlok)
+   * [Szükséges fájlok](#szükséges-fájlok)
+   * [EXE legenerálása (Windows)](#exe-legenerálása-windows)
+* [TSF Viewer - Használati útmutató](#tsf-viewer---használati-útmutató)
+   * [A script futtatása](#a-script-futtatása)
+   * [Fájlnév specifikációk](#fájlnév-specifikációk)
+   * [Tömörítés](#tömörítés)
+   * [Grafikus felület](#grafikus-felület)
+      * [Csatornaváltás](#csatornaváltás)
+      * [Gyorsbillentyűk](#gyorsbillentyűk)
+      * [Felhasználói inputok](#felhasználói-inputok)
+
 # TSF Viewer - Telepítési útmutató
 ## Alapfeltételek
 Ahhoz, hogy a scriptet futtatni lehessen, szükséges:
 
-1. A legfrissebb python verzió
-2. És a következő package-ek telepítése virtuális környezetben (lásd [EXE legenerálása](#exe)):
+- A legfrissebb python verzió (de legalább Python 3.11 szükséges)
+- A következő package-ek telepítése virtuális környezetben (lásd [EXE legenerálása](#exe-legenerálása-windows)):
 `pandas numpy pyqtgraph PyQt6 requests h5py`
 
-## Konfigurációs fájlok (`tsf_viewer_ftp.json`, `tsf_viewer_config.toml`)
-A program egy `tsf_viewer_ftp.json` nevű állományból olvassa ki a log fájlok eléréséhez szükséges FTP adatokat. Ezt a program helyes működéséhez csatolnunk kell a projektmappába.
-
-A JSON szerkezete:
-```
-{
-    "STATION1": {
-        "host": "example.server.com",
-        "user": "username",
-        "passwd": "password",
-        "path": "/optional/folder/path/"
-    },
-    "STATION2": {
-        "host": "example2.server.com",
-        "user": "username2",
-        "passwd": "password2"
+## Konfigurációs fájlok
+- A program egy `tsf_viewer_ftp.json` nevű állományból olvassa ki a log fájlok eléréséhez szükséges FTP adatokat. Ezt a program helyes működéséhez csatolnunk kell a projektmappába.
+<br><br>
+    A JSON szerkezete:
+    ```
+    {
+        "STATION1": {
+            "host": "example.server.com",
+            "user": "username",
+            "passwd": "password",
+            "path": "/optional/folder/path/"
+        },
+        "STATION2": {
+            "host": "example2.server.com",
+            "user": "username2",
+            "passwd": "password2"
+        }
     }
-}
-```
+    ```
 
-Illetve van pár változó, aminek az értékét mi magunk is megadhatjuk.
+- Illetve van pár változó, aminek az értékét mi magunk is megadhatjuk.
 Ezeket a `tsf_viewer_config.toml` fájl átírásával tehetjük meg. Ha hiányzik a config, a program rákérdez, hogy kívánjuk-e legenerálni.
 
-## <p id="fajlok">Szükséges fájlok</p>
+## Szükséges fájlok
 Ahhoz hogy az EXE állományt el tudjuk készíteni, ezekre lesz szükségünk:
 
 - `tsf_viewer.py`
@@ -39,12 +54,12 @@ Ahhoz hogy az EXE állományt el tudjuk készíteni, ezekre lesz szükségünk:
 - `icon.png`
 - `icon.ico`
 
-## <p id="exe">EXE legenerálása (Windows)</p>
+## EXE legenerálása (Windows)
 1. Hozzunk létre egy virtuális python környezetet a projekt mappában:
     ```bash
     python -m venv venv
     ```
-2. Győződjünk meg, hogy a mappában megtalálhatóak a [szükséges fájlok](#fajlok).
+2. Győződjünk meg, hogy a mappában megtalálhatóak a [szükséges fájlok](#szükséges-fájlok).
 3. Indítsuk el a virtuális környezetet:
     ```bash
     venv\Scripts\activate.bat
@@ -61,7 +76,7 @@ Ahhoz hogy az EXE állományt el tudjuk készíteni, ezekre lesz szükségünk:
 
 # TSF Viewer - Használati útmutató
 ## A script futtatása
-- Kövessük az [EXE legenerálása](#exe) utasításait a 4. lépésig.
+- Kövessük az [EXE legenerálása](#exe-legenerálása-windows) utasításait a 4. lépésig.
 - A futtatáshoz meg kell adnunk parancssori argumentumként a beolvasandó fájl
 elérési útját. Ezt megtehetjük abszolút és relatív hivatkozásokkal is. A fájl
 csak `.tsf` vagy `.tsf.h5` kiterjesztésű lehet. Továbbá megadhatunk
