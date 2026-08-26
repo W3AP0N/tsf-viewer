@@ -129,7 +129,7 @@ h5_save_path = compression_config.get("h5_save_path", "*")
 # =====================================================
 is_win = platform.system() == "Windows"
 #is_win = True
-exec_cmd = r"TSF_Viewer.exe" if is_win else "./tsf_viewer"
+exec_cmd = r"TSF_Viewer" if is_win else "./tsf_viewer"
 
 if len(sys.argv) < 2:
     print("Usage:")
