@@ -90,8 +90,7 @@ def parse_tsf_header(path: str):
 
 def compute_timestamps(df_time_cols: pd.DataFrame) -> np.ndarray:
     """
-    Rendkívül gyors, tiszta NumPy alapú Unix timestamp számítás.
-    ~100x gyorsabb, mint a pd.to_datetime().
+    Gyors, NumPy alapú Unix timestamp számítás.
     """
     years = df_time_cols.iloc[:, 0].to_numpy(dtype=np.int64)
     months = df_time_cols.iloc[:, 1].to_numpy(dtype=np.int64)
@@ -124,7 +123,7 @@ def compute_timestamps(df_time_cols: pd.DataFrame) -> np.ndarray:
     return timestamps
 
 # =====================================================
-# Konvertáló főfüggvény (OPTIMALIZÁLT)
+# Konvertáló főfüggvény
 # =====================================================
 def convert_tsf_to_h5(
         tsf_path: str,
@@ -232,7 +231,6 @@ def convert_tsf_to_h5(
                 chunks=(100_000, ch_count),
             )
 
-            # Megnyitjuk a fájlt stream olvasásra
             with open(tsf_path, "r", encoding="utf-8", errors="ignore") as f:
 
                 # Kézzel átugorjuk a fejlécet, így a pandas azonnal az adatokkal kezd
@@ -262,7 +260,7 @@ def convert_tsf_to_h5(
                     if time_cols < 6:
                         continue
 
-                    # 3.1. Timestamps (Szupergyors NumPy konverzió)
+                    # 3.1. Timestamps
                     timestamps = compute_timestamps(df.iloc[:, :time_cols])
 
                     # 3.2. Adat mátrix

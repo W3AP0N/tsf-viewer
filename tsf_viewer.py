@@ -42,6 +42,14 @@ from PyQt6.QtGui import QShortcut, QKeySequence, QIcon
 os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__)))
 
 # =====================================================
+# Copyrigth
+# =====================================================
+print("===========================================================")
+print("  TSF Viewer © 2026 Wolford Péter")
+print("  Documentation: https://github.com/W3AP0N/tsf-viewer/wiki")
+print("===========================================================")
+
+# =====================================================
 # Globális hibakezelés
 # =====================================================
 def global_exception_handler(exc_type, exc_value, exc_traceback):
@@ -567,7 +575,6 @@ class Viewer(QWidget):
         self.update_event_markers()
         self.current = 0
         self.change_channel(0)
-        print("Documentation at https://github.com/W3AP0N/tsf-viewer/wiki")
 
     def _setup_ui(self):
         """Létrehozza az ablakot, a legördülő menüt, a gyorsgombokat és a gombsort."""
@@ -620,6 +627,24 @@ class Viewer(QWidget):
         btn_layout.addStretch()
         btn_layout.addWidget(self.lbl_method)
         self.main_layout.addLayout(btn_layout)
+
+        # Copyright
+        self.lbl_copyright = QLabel("© 2026 Wolford Péter", self)
+        self.lbl_copyright.setStyleSheet("""
+                QLabel {
+                    color: #A0A0A0;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                }
+            """)
+        self.lbl_copyright.adjustSize()
+        self.lbl_copyright.show()
+
+        # --- Pozicionálás a bal alsó sarokba ---
+        margin = 10  # 10 pixel margó a szélétől
+        x_pos = margin
+        y_pos = self.height() - self.lbl_copyright.height() - margin
+        self.lbl_copyright.move(x_pos, y_pos)
 
     def _setup_plot(self):
         """Grafikon (PlotWidget) inicializálása és eseménykezelők bekötése."""
@@ -1773,6 +1798,18 @@ class Viewer(QWidget):
             self.e_key_pressed = False
 
         super().keyReleaseEvent(event)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+
+        if hasattr(self, 'lbl_copyright'):
+            margin = 10
+            # Jobb alsó sarok koordinátái:
+            x = self.width() - self.lbl_copyright.width() - margin
+            y = self.height() - self.lbl_copyright.height() - margin
+
+            self.lbl_copyright.move(x, y)
+            self.lbl_copyright.raise_()
 
     # ------------------------------------------------------------------
     # Utility

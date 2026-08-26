@@ -9,7 +9,7 @@ from ftplib import FTP, all_errors
 os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__)))
 
 # =====================================================
-# Alap konfiguráció betöltése
+# Alap config betöltése
 # =====================================================
 try:
     with open("tsf_viewer_config.toml", "rb") as config_file:
@@ -21,7 +21,7 @@ path_config = config.get("path", {})
 ftp_json_path = path_config.get("ftp_json", "tsf_viewer_ftp.json")
 
 # =====================================================
-# FTP konfiguráció betöltése
+# FTP config betöltése
 # =====================================================
 FTP_CONFIG = {}
 
@@ -31,7 +31,7 @@ try:
 except FileNotFoundError:
     pass
 
-# --- REGEX KONSTANSOK KIEMELÉSE ---
+# --- REGEX KONSTANSOK ---
 # Csak egyszer fordul le a program indításakor, hatékonyabb.
 SEP = r'[-_./]'
 p1 = r'(?P<y1>\d{4})' + SEP + r'(?P<m1>\d{1,2})' + SEP + r'(?P<d1>\d{1,2})'
