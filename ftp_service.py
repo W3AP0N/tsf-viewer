@@ -62,13 +62,6 @@ def download_log(sensor, output_file):
     start_time = time.time()
     file_created = False
 
-    def _cleanup_file(file_path, file_created):
-        if file_created and os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-            except OSError:
-                pass
-
     try:
         print(f"Downloading '{filename}'...", end="", flush=True)
         with FTP(sensor_info["host"], timeout=15) as ftp:
@@ -108,9 +101,22 @@ def download_log(sensor, output_file):
         print(f"[ERROR] While writing local file: {e}")
         return False
 
-def convert_to_csv(input_filepath, output_filepath):
+def parse_log_from_file(filepath):
+    """Beolvassa a log fájlt és visszaadja a bejegyzések listáját: [(date, text), ...]"""
+    try:
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+        except UnicodeDecodeError:
+            with open(filepath, 'r', encoding='iso-8859-1') as f:
+                lines = f.readlines()
+        return parse_log_lines(lines)
+    except Exception:
+        return []
+
+def parse_log_lines(lines):
+    """A log sorait dolgozza fel memóriában, és visszaadja a [(date, text), ...] listát."""
     def _parse_and_format_date(line):
-        """Megkeresi a dátumot a sorban, és YYYY.MM.DD. formátumra alakítja."""
         m = DATE_REGEX.search(line)
         if not m:
             return None, line
@@ -134,16 +140,6 @@ def convert_to_csv(input_filepath, output_filepath):
 
         return formatted_date, clean_text
 
-    # --- Fájl beolvasás ---
-    try:
-        with open(input_filepath, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-    except UnicodeDecodeError:
-        with open(input_filepath, 'r', encoding='iso-8859-1') as f:
-            lines = f.readlines()
-    except Exception:
-        return False
-
     entries = []
     current_date = None
     current_text = []
@@ -160,7 +156,7 @@ def convert_to_csv(input_filepath, output_filepath):
             if current_date:
                 full_text = " ".join(current_text).strip()
                 if full_text:
-                    entries.append([current_date, full_text])
+                    entries.append((current_date, full_text))
 
             current_date = found_date
             current_text = []
@@ -170,18 +166,19 @@ def convert_to_csv(input_filepath, output_filepath):
             if current_date:
                 current_text.append(line)
 
-    # --- Utolsó bejegyzés mentése ---
     if current_date and current_text:
         full_text = " ".join(current_text).strip()
         if full_text:
-            entries.append([current_date, full_text])
+            entries.append((current_date, full_text))
 
-    # --- CSV fájl kiírása ---
-    with open(output_filepath, 'w', encoding='utf-8', newline='') as f:
-        writer = csv.writer(f, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerows(entries)
+    return entries
 
-    return True
+def _cleanup_file(file_path, file_created):
+    if file_created and os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
 
 # ----- Teszt -----
 # if __name__ == "__main__":

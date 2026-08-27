@@ -802,14 +802,13 @@ class Viewer(QWidget):
     def _fetch_and_parse_events(self):
         """Letölti a szerverről a logokat, és kinyeri az egyező eseményeket egy dictionary-be."""
         run_id = uuid.uuid4().hex[:8]
-        datumok_csv = f"datumok_{run_id}.csv"
         log_txt = f"log_for_{self.sensor.lower()}_{run_id}.txt"
-        temp_csv = f"temp_{run_id}.csv"
         events = {}
 
         # Minta optimalizálása (RegEx)
         def _get_pattern(val):
-            if not val: return None
+            if not val:
+                return None
             match = re.search(r"([A-Z]+)(\d+)$", val)
             if match:
                 prefix, num = match.groups()
@@ -819,54 +818,40 @@ class Viewer(QWidget):
         sensor_pattern = _get_pattern(self.sensor)
         station_pattern = _get_pattern(self.station)
 
-        def _parse_csv_to_events(csv_path, check_pattern=False):
-            if not os.path.exists(csv_path): return
-            try:
-                with open(csv_path, "r", encoding="utf-8", newline="") as fin:
-                    reader = csv.reader(fin, delimiter=";")
-                    for row in reader:
-                        if len(row) < 2: continue
+        # Segédfüggvény a (date, text) tuple lista feldolgozásához
+        def _process_entries(entries, check_pattern=False):
+            for date, new_text in entries:
+                if check_pattern:
+                    text_upper = new_text.upper()
+                    if not (
+                            (station_pattern and station_pattern.search(text_upper))
+                            or (sensor_pattern and sensor_pattern.search(text_upper))
+                    ):
+                        continue
 
-                        date, new_text = row[0], row[1]
-
-                        if check_pattern:
-                            text_upper = new_text.upper()
-                            if not ((station_pattern and station_pattern.search(text_upper)) or
-                                    (sensor_pattern and sensor_pattern.search(text_upper))):
-                                continue
-
-                        if date in events:
-                            events[date] += f'<hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">{new_text}'
-                        else:
-                            events[date] = new_text
-            except Exception as e:
-                print(f"[ERROR] While reading file {csv_path}: {e}")
+                if date in events:
+                    events[
+                        date
+                    ] += f'<hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">{new_text}'
+                else:
+                    events[date] = new_text
 
         try:
-            # Fájlok generálása
-            try:
-                ftp_service.convert_to_csv(datumok_txt, datumok_csv)
-            except Exception:
-                pass
+            local_entries = ftp_service.parse_log_from_file(datumok_txt)
+            _process_entries(local_entries, check_pattern=True)
 
-            try:
-                ftp_service.download_log(self.sensor, log_txt)
-                ftp_service.convert_to_csv(log_txt, temp_csv)
-            except Exception:
-                pass
-
-            # Fájlok beolvasása
-            _parse_csv_to_events(datumok_csv, check_pattern=True)
-            _parse_csv_to_events(temp_csv, check_pattern=False)
+            # 2. FTP log letöltése és beolvasása közvetlenül a listába
+            if ftp_service.download_log(self.sensor, log_txt):
+                remote_entries = ftp_service.parse_log_from_file(log_txt)
+                _process_entries(remote_entries, check_pattern=False)
 
         finally:
-            # Biztonságos takarítás (nincs több locals() ellenőrzés)
-            for path in (datumok_csv, log_txt, temp_csv):
-                if os.path.exists(path):
-                    try:
-                        os.remove(path)
-                    except OSError:
-                        pass
+            # Csak az egyetlen ideiglenes letöltött fájlt kell takarítani
+            if os.path.exists(log_txt):
+                try:
+                    os.remove(log_txt)
+                except OSError:
+                    pass
 
         print("Total events in log:", len(events))
         return events
