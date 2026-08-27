@@ -3,6 +3,7 @@ import os
 import sys
 import csv
 import json
+import time
 import tomllib
 from ftplib import FTP, all_errors
 
@@ -19,6 +20,12 @@ except FileNotFoundError:
 
 path_config = config.get("path", {})
 ftp_json_path = path_config.get("ftp_json", "tsf_viewer_ftp.json")
+
+# =====================================================
+# Exception
+# =====================================================
+class DownloadTimeoutError(Exception):
+    pass
 
 # =====================================================
 # FTP config betöltése
@@ -45,38 +52,59 @@ p4 = (
 DATE_REGEX = re.compile(rf'(?<!\()\b(?:{p1}|{p2}|{p3}|{p4})\b(?!\))')
 
 def download_log(sensor, output_file):
-    """FTP kapcsolatot létesít a megadott szenzorhoz, és letölti a log fájlt."""
+    max_download_time = 15
     if sensor not in FTP_CONFIG:
         print(f"[WARNING] No FTP data for sensor '{sensor}'")
         return False
 
     sensor_info = FTP_CONFIG[sensor]
     filename = f"log_for_{sensor.lower()}.txt"
+    start_time = time.time()
+    file_created = False
+
+    def _cleanup_file(file_path, file_created):
+        if file_created and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
 
     try:
-        with FTP(sensor_info["host"], timeout=30) as ftp:
-            ftp.login(
-                user=sensor_info["user"],
-                passwd=sensor_info["passwd"]
-            )
+        print(f"Downloading '{filename}'...", end="", flush=True)
+        with FTP(sensor_info["host"], timeout=15) as ftp:
+            ftp.login(user=sensor_info["user"], passwd=sensor_info["passwd"])
 
             if "path" in sensor_info:
                 ftp.cwd(sensor_info["path"])
 
-            print(f"Downloading '{filename}'...", end="", flush=True)
-
             with open(output_file, "wb") as local_file:
-                ftp.retrbinary(f"RETR {filename}", local_file.write)
+                file_created = True
 
+                def handle_chunk(data):
+                    if time.time() - start_time > max_download_time:
+                        raise DownloadTimeoutError()
+
+                    local_file.write(data)
+
+                ftp.retrbinary(f"RETR {filename}", handle_chunk)
+
+            # Siker esetén közvetlenül mögé írja
             print(" Done!")
+            return True
 
-        return True
+    except DownloadTimeoutError:
+        print(" TIMEOUT! (>15.000s)")
+        print("[WARNING] Skipping download!")
+        _cleanup_file(output_file, file_created)
+        return False
 
     except all_errors as e:
+        print(" FAILED!")
         print(f"[FTP ERROR] While processing: {e}")
         return False
 
     except IOError as e:
+        print(" FAILED!")
         print(f"[ERROR] While writing local file: {e}")
         return False
 

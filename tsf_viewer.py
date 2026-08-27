@@ -44,10 +44,10 @@ os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen'
 # =====================================================
 # Copyrigth
 # =====================================================
-print("===========================================================")
-print("  TSF Viewer © 2026 Wolford Péter")
-print("  Documentation: https://github.com/W3AP0N/tsf-viewer/wiki")
-print("===========================================================")
+print("============================================================")
+print("  TSF Viewer © 2026 Wolford Péter                           ")
+print("  Documentation: https://github.com/W3AP0N/tsf-viewer/wiki  ")
+print("============================================================")
 
 # =====================================================
 # Globális hibakezelés
@@ -836,8 +836,7 @@ class Viewer(QWidget):
                                 continue
 
                         if date in events:
-                            events[
-                                date] += f'<hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">{new_text}'
+                            events[date] += f'<hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">{new_text}'
                         else:
                             events[date] = new_text
             except Exception as e:
