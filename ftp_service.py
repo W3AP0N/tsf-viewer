@@ -1,7 +1,6 @@
 import re
 import os
 import sys
-import csv
 import json
 import time
 import tomllib
@@ -10,8 +9,9 @@ from ftplib import FTP, all_errors
 os.chdir(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, 'frozen', False) else __file__)))
 
 # =====================================================
-# Alap config betöltése
+# Configok betöltése
 # =====================================================
+# Alap config
 try:
     with open("tsf_viewer_config.toml", "rb") as config_file:
         config = tomllib.load(config_file)
@@ -21,21 +21,19 @@ except FileNotFoundError:
 path_config = config.get("path", {})
 ftp_json_path = path_config.get("ftp_json", "tsf_viewer_ftp.json")
 
-# =====================================================
-# Exception
-# =====================================================
-class DownloadTimeoutError(Exception):
-    pass
-
-# =====================================================
-# FTP config betöltése
-# =====================================================
+# FTP
 FTP_CONFIG = {}
 
 try:
     with open(ftp_json_path, "r", encoding="utf-8") as ftp_config_file:
         FTP_CONFIG = json.load(ftp_config_file)
 except FileNotFoundError:
+    pass
+
+# =====================================================
+# Exception
+# =====================================================
+class DownloadTimeoutError(Exception):
     pass
 
 # --- REGEX KONSTANSOK ---

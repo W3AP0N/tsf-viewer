@@ -10,6 +10,7 @@ import uuid
 import time
 import h5py
 import gzip
+import glob
 import base64
 import ctypes
 import signal
@@ -148,15 +149,34 @@ if is_win:
         pass
 
 filepath = sys.argv[1]
-filename = os.path.basename(filepath)
-base_name, _ = os.path.splitext(filename)
-
 is_h5 = False
 
+# 1. Ellenőrizzük az eredeti fájlt
 if not os.path.isfile(filepath):
-    print(f"[ERROR] File does not exist '{filepath}'")
-    input("\n\nPress ENTER to exit...")
-    sys.exit(1)
+    # Kinyerjük a mappát és a fájl nevét kiterjesztés nélkül
+    folder = os.path.dirname(filepath)
+    filename_without_ext = os.path.splitext(os.path.basename(filepath))[0]
+
+    # Megpróbáljuk megtalálni a pontos .h5 párját
+    h5_candidate = os.path.join(folder, f"{filename_without_ext}.h5")
+
+    # Ha nincs meg a pontos név, keresünk bármilyen .h5 fájlt a mappában, ami ezzel a névvel kezdődik
+    if os.path.isfile(h5_candidate):
+        filepath = h5_candidate
+        is_h5 = True
+    else:
+        h5_matches = glob.glob(os.path.join(folder, f"{filename_without_ext}*.h5"))
+        if h5_matches and os.path.isfile(h5_matches[0]):
+            filepath = h5_matches[0]
+            is_h5 = True
+        else:
+            print(f"[ERROR] File does not exist '{filepath}'")
+            input("\n\nPress ENTER to exit...")
+            sys.exit(1)
+
+# 2. Változók frissítése a végleges (eredeti vagy .h5) fájl alapján
+filename = os.path.basename(filepath)
+base_name, _ = os.path.splitext(filename)
 
 if not filename.lower().endswith((".tsf", ".tsf.h5")):
     print(f"[ERROR] '{filename}' is not a '.tsf' or '.tsf.h5' file!")
