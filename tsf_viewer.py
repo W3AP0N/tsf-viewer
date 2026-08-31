@@ -814,58 +814,108 @@ class Viewer(QWidget):
                         'idx': idx, 'timestamp': ts, 'date_str': display_date_str, 'text': event_text
                     })
             except Exception as e:
-                print(f"[ERROR] While processing date ({date_str}): {e}")
+                #print(f"[ERROR] While processing date ({date_str}): {e}")
+                pass
 
         if self.loaded_events:
             print(f"Events mapped to plot: {len(self.loaded_events)}\n")
 
     def _fetch_and_parse_events(self):
+
         """Letölti a szerverről a logokat, és kinyeri az egyező eseményeket egy dictionary-be."""
+
         run_id = uuid.uuid4().hex[:8]
         log_txt = f"log_for_{self.sensor.lower()}_{run_id}.txt"
         events = {}
+
+        # Tiltott stringek listája a datumok.txt-ből származó bejegyzések ellenőrzéséhez
+        excluded_strings = [
+            "TPSO", "COBS", "SOPGO", "SOPPAL", "BREBA", "PYNA", "PTNA",
+            "HRTM1", "SOP2", "SOP3", "SOP4", "SOP5", "SOP6", "SOP7"
+        ]
 
         # Minta optimalizálása (RegEx)
         def _get_pattern(val):
             if not val:
                 return None
+
             match = re.search(r"([A-Z]+)(\d+)$", val)
+
             if match:
                 prefix, num = match.groups()
                 return re.compile(rf"{prefix}0*{num}")
+
             return re.compile(re.escape(val))
 
         sensor_pattern = _get_pattern(self.sensor)
         station_pattern = _get_pattern(self.station)
 
         # Segédfüggvény a (date, text) tuple lista feldolgozásához
-        def _process_entries(entries, check_pattern=False):
+        def _process_entries(entries, is_local_file=False):
+
             for date, new_text in entries:
-                if check_pattern:
-                    text_upper = new_text.upper()
-                    if not (
-                            (station_pattern and station_pattern.search(text_upper))
-                            or (sensor_pattern and sensor_pattern.search(text_upper))
-                    ):
-                        continue
+
+                # ==========================================================
+                # datumok.txt kezelése
+                # ==========================================================
+                if is_local_file:
+
+                    # Megnézzük, hogy tartalmaz-e tiltott stringet
+                    has_excluded = any(
+                        exc in new_text
+                        for exc in excluded_strings
+                    )
+
+                    # Ha NEM tartalmaz tiltott stringet,
+                    # akkor feltétel nélkül bekerül.
+                    if not has_excluded:
+
+                        if not new_text.startswith("flag!unm4tchd"):
+                            new_text = "flag!unm4tchd" + new_text
+
+                    else:
+                        # Ha tartalmaz tiltott stringet,
+                        # akkor kell a normál sensor/station szűrés.
+                        text_upper = new_text.upper()
+
+                        if not (
+                                (station_pattern and station_pattern.search(text_upper))
+                                or
+                                (sensor_pattern and sensor_pattern.search(text_upper))
+                        ):
+                            continue
+
+                # ==========================================================
+                # FTP log kezelése
+                # ==========================================================
+                # FONTOS:
+                # Az FTP logot NEM szűrjük sensor/station alapján.
+                # Minden FTP-ből érkező esemény bekerül.
+                # ==========================================================
 
                 if date in events:
-                    events[
-                        date
-                    ] += f'<hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">{new_text}'
+                    events[date] += (
+                        '<hr style="border: 0; border-top: 1px solid #00FFCC; '
+                        'margin: 6px 0;">'
+                        f'{new_text}'
+                    )
                 else:
                     events[date] = new_text
 
         try:
-            local_entries = ftp_service.parse_log_from_file(datumok_txt)
-            _process_entries(local_entries, check_pattern=True)
 
-            # 2. FTP log letöltése és beolvasása közvetlenül a listába
+            # 1. datumok.txt feldolgozása
+            local_entries = ftp_service.parse_log_from_file(datumok_txt)
+            _process_entries(local_entries, is_local_file=True)
+
+            # 2. FTP log letöltése és feldolgozása
+            # Az FTP log NINCS szűrve.
             if ftp_service.download_log(self.sensor, log_txt):
                 remote_entries = ftp_service.parse_log_from_file(log_txt)
-                _process_entries(remote_entries, check_pattern=False)
+                _process_entries(remote_entries, is_local_file=False)
 
         finally:
+
             # Csak az egyetlen ideiglenes letöltött fájlt kell takarítani
             if os.path.exists(log_txt):
                 try:
@@ -874,6 +924,7 @@ class Viewer(QWidget):
                     pass
 
         print("Total events in log:", len(events))
+
         return events
 
     # ------------------------------------------------------------------
@@ -921,6 +972,10 @@ class Viewer(QWidget):
                 self.event_markers.setVisible(False)
             if getattr(self, 'event_lines', None):
                 self.event_lines.setVisible(False)
+            if getattr(self, 'unmatched_event_markers', None):
+                self.unmatched_event_markers.setVisible(False)
+            if getattr(self, 'unmatched_event_lines', None):
+                self.unmatched_event_lines.setVisible(False)
             return
 
         # 2. Alapértelmezett állapot és nézet-frissítő esemény bekötése (csak egyszer)
@@ -933,24 +988,36 @@ class Viewer(QWidget):
 
         vb = self.plot.getViewBox()
 
-        # 3. Függőleges vonalak konténerének inicializálása
+        # 3. Függőleges vonalak konténereinek inicializálása (normál és unmatched narancs)
         if getattr(self, 'event_lines', None) is None:
             self.event_lines = pg.PlotCurveItem(
                 pen=pg.mkPen(color='#00FFCC', width=1.0)
             )
             vb.addItem(self.event_lines, ignoreBounds=True)
 
+        if getattr(self, 'unmatched_event_lines', None) is None:
+            self.unmatched_event_lines = pg.PlotCurveItem(
+                pen=pg.mkPen(color='#FFA500', width=1.0)
+            )
+            vb.addItem(self.unmatched_event_lines, ignoreBounds=True)
+
         # 4. Eseményjelölő ikonok (ScatterPlotItem) és kurzoresemények inicializálása
+        custom_pin = pg.QtGui.QPainterPath()
+        custom_pin.moveTo(-0.5, -0.5)
+        custom_pin.lineTo(0.5, -0.5)
+        custom_pin.lineTo(0, 0.5)
+        custom_pin.closeSubpath()
+
+        pointing_hand = getattr(Qt.CursorShape, 'PointingHandCursor', getattr(Qt, 'PointingHandCursor', None))
+        arrow_hand = getattr(Qt.CursorShape, 'ArrowCursor', getattr(Qt, 'ArrowCursor', None))
+
+        def _on_marker_hover(ev):
+            if ev.isEnter():
+                self.plot.setCursor(pointing_hand)
+            elif ev.isExit():
+                self.plot.setCursor(arrow_hand)
+
         if getattr(self, 'event_markers', None) is None:
-            custom_pin = pg.QtGui.QPainterPath()
-            custom_pin.moveTo(-0.5, -0.5)
-            custom_pin.lineTo(0.5, -0.5)
-            custom_pin.lineTo(0, 0.5)
-            custom_pin.closeSubpath()
-
-            pointing_hand = getattr(Qt.CursorShape, 'PointingHandCursor', getattr(Qt, 'PointingHandCursor', None))
-            arrow_hand = getattr(Qt.CursorShape, 'ArrowCursor', getattr(Qt, 'ArrowCursor', None))
-
             self.event_markers = pg.ScatterPlotItem(
                 size=event_marker_size,
                 pen=pg.mkPen(color='#00FFCC', width=1.5),
@@ -958,21 +1025,30 @@ class Viewer(QWidget):
                 symbol=custom_pin,
                 hoverable=True
             )
-
-            def _on_marker_hover(ev):
-                if ev.isEnter():
-                    self.plot.setCursor(pointing_hand)
-                elif ev.isExit():
-                    self.plot.setCursor(arrow_hand)
-
             self.event_markers.hoverEvent = _on_marker_hover
             vb.addItem(self.event_markers, ignoreBounds=True)
+
+        if getattr(self, 'unmatched_event_markers', None) is None:
+            self.unmatched_event_markers = pg.ScatterPlotItem(
+                size=event_marker_size,
+                pen=pg.mkPen(color='#FFA500', width=1.5),
+                brush=pg.mkBrush(255, 165, 0, 150),
+                symbol=custom_pin,
+                hoverable=True
+            )
+            self.unmatched_event_markers.hoverEvent = _on_marker_hover
+            vb.addItem(self.unmatched_event_markers, ignoreBounds=True)
 
         # 5. Pozíciók és láthatóság frissítése az aktuális beállítások alapján
         self.update_event_markers_position()
 
-        self.event_markers.setVisible(self.event_toggle_state in (0, 1))
-        self.event_lines.setVisible(self.event_toggle_state == 1)
+        show_markers = self.event_toggle_state in (0, 1)
+        show_lines = self.event_toggle_state == 1
+
+        self.event_markers.setVisible(show_markers)
+        self.unmatched_event_markers.setVisible(show_markers)
+        self.event_lines.setVisible(show_lines)
+        self.unmatched_event_lines.setVisible(show_lines)
 
         # 6. Aktív popup pozíciójának frissítése (ha nyitva van)
         popup = getattr(self, 'event_popup', None)
@@ -989,9 +1065,10 @@ class Viewer(QWidget):
         aktív popup pozícióját.
         """
         markers = getattr(self, 'event_markers', None)
+        unmatched_markers = getattr(self, 'unmatched_event_markers', None)
         events = getattr(self, 'loaded_events', None)
 
-        if not markers or not events:
+        if not markers or not unmatched_markers or not events:
             return
 
         vb = self.plot.plotItem.vb
@@ -1000,7 +1077,6 @@ class Viewer(QWidget):
         y_min, y_max = vb.viewRange()[1]
 
         # 2. Biztonságos Y pozíció kiszámítása (ne pont a határvonalon legyen)
-        # Kb. 2%-kal lejjebb hozzuk a tetejétől, hogy a PyQtGraph sose vágja le (clipping)
         y_margin = (y_max - y_min) * 0.004
         safe_y_max = y_max - y_margin
 
@@ -1011,24 +1087,51 @@ class Viewer(QWidget):
         else:
             events_to_show = events
 
-        # Ha valamiért üres lenne a lista, töröljük a rajzot és kilépünk
+        # Ha valamiért üres lenne a lista, töröljük a rajzokat és kilépünk
         if not events_to_show:
+            markers.setData(x=[], y=[])
+            unmatched_markers.setData(x=[], y=[])
+            if getattr(self, 'event_lines', None):
+                self.event_lines.setData(x=[], y=[])
+            if getattr(self, 'unmatched_event_lines', None):
+                self.unmatched_event_lines.setData(x=[], y=[])
+            return
+
+        # Külválogatás normál és unmatched (narancs) eseményekre
+        normal_events = [ev for ev in events_to_show if "flag!unm4tchd" not in str(ev.get('text', ''))]
+        unmatched_events = [ev for ev in events_to_show if "flag!unm4tchd" in str(ev.get('text', ''))]
+
+        # Normál adatok frissítése
+        if normal_events:
+            x_norm = [ev['timestamp'] for ev in normal_events]
+            y_norm = [safe_y_max] * len(x_norm)
+            markers.setData(x=x_norm, y=y_norm)
+
+            lines = getattr(self, 'event_lines', None)
+            if lines:
+                x_lines = [x for x in x_norm for _ in (0, 1)]
+                y_lines = [y for _ in x_norm for y in (y_min, safe_y_max)]
+                lines.setData(x=x_lines, y=y_lines, connect='pairs')
+        else:
             markers.setData(x=[], y=[])
             if getattr(self, 'event_lines', None):
                 self.event_lines.setData(x=[], y=[])
-            return
 
-        x_coords = [ev['timestamp'] for ev in events_to_show]
-        y_coords = [safe_y_max] * len(x_coords)
+        # Unmatched (narancs) adatok frissítése
+        if unmatched_events:
+            x_unmatched = [ev['timestamp'] for ev in unmatched_events]
+            y_unmatched = [safe_y_max] * len(x_unmatched)
+            unmatched_markers.setData(x=x_unmatched, y=y_unmatched)
 
-        # 4. Adatok frissítése
-        markers.setData(x=x_coords, y=y_coords)
-
-        lines = getattr(self, 'event_lines', None)
-        if lines:
-            x_lines = [x for x in x_coords for _ in (0, 1)]
-            y_lines = [y for _ in x_coords for y in (y_min, safe_y_max)]
-            lines.setData(x=x_lines, y=y_lines, connect='pairs')
+            unmatched_lines = getattr(self, 'unmatched_event_lines', None)
+            if unmatched_lines:
+                x_lines_unm = [x for x in x_unmatched for _ in (0, 1)]
+                y_lines_unm = [y for _ in x_unmatched for y in (y_min, safe_y_max)]
+                unmatched_lines.setData(x=x_lines_unm, y=y_lines_unm, connect='pairs')
+        else:
+            unmatched_markers.setData(x=[], y=[])
+            if getattr(self, 'unmatched_event_lines', None):
+                self.unmatched_event_lines.setData(x=[], y=[])
 
         popup = getattr(self, 'event_popup', None)
         if popup and popup.isVisible() and active_ts is not None:
@@ -1452,9 +1555,11 @@ class Viewer(QWidget):
         """
         is_multi_year = bool(getattr(self, 'loaded_events', None))
 
-        # Grafikus elemek hivatkozásainak lekérése
+        # Grafikus elemek hivatkozásainak lekérése (normál és unmatched)
         markers = getattr(self, 'event_markers', None)
         lines = getattr(self, 'event_lines', None)
+        unmatched_markers = getattr(self, 'unmatched_event_markers', None)
+        unmatched_lines = getattr(self, 'unmatched_event_lines', None)
 
         # Biztosítjuk a kompatibilitást mindkét elnevezéssel (event_popup / event_label)
         popup = getattr(self, 'event_popup', getattr(self, 'event_label', None))
@@ -1473,11 +1578,15 @@ class Viewer(QWidget):
             show_markers = False
             show_lines = False
 
-        # LÁTHATÓSÁGOK BEÁLLÍTÁSA
+        # LÁTHATÓSÁGOK BEÁLLÍTÁSA (mindkét színcsoportra)
         if markers:
             markers.setVisible(show_markers)
         if lines:
             lines.setVisible(show_lines)
+        if unmatched_markers:
+            unmatched_markers.setVisible(show_markers)
+        if unmatched_lines:
+            unmatched_lines.setVisible(show_lines)
 
         # Popup / Label láthatóságának vezérlése
         if popup:
@@ -1670,40 +1779,55 @@ class Viewer(QWidget):
             # Megjelenítés: Esemény ablak (popup) és sima adatminta pont
             if clicked_event:
                 raw_text = str(clicked_event.get('text', 'No data'))
-                formatted_text = raw_text.replace('\n', '<br>')
 
-                html_text = f"""
-                <div style="color: #00FFCC; font-family: monospace; font-size: {font_size}pt;">
-                    <b style="font-size: {font_size + 1}pt;">[ EVENT INFO ]</b><br>
-                    <b>Date: {clicked_event['date_str']}</b>
-                    <hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">
-                    <div style="line-height: 1.3;">{formatted_text}</div>
-                </div>
+                # Ellenőrizzük, hogy tartalmazza-e az unmatched flag-et
+                is_unmatched = "flag!unm4tchd" in raw_text
+
+                # Eltávolítjuk a flaget a megjelenített szövegből, hogy a felhasználó ne lássa
+                clean_text = raw_text.replace("flag!unm4tchd", "").strip()
+                formatted_text = clean_text.replace('\n', '<br>')
+
+                # Szín és cím beállítása a flag alapján
+                if is_unmatched:
+                    theme_color = "#FFA500"  # Nagy narancs szín
+                    title_text = "[ UNMATCHED EVENT INFO ]"
+                else:
+                    theme_color = "#00FFCC"  # Alap világoskék szín
+                    title_text = "[ EVENT INFO ]"
+
+                html_text = f""" 
+                <div style="color: {theme_color}; font-family: monospace; font-size: {font_size}pt;"> 
+                    <b style="font-size: {font_size + 1}pt;">{title_text}</b><br> 
+                    <b>Date: {clicked_event['date_str']}</b> 
+                    <hr style="border: 0; border-top: 1px solid {theme_color}; margin: 6px 0;"> 
+                    <div style="line-height: 1.3;">{formatted_text}</div> 
+                </div> 
                 """
 
                 if getattr(self, 'event_popup', None) is None:
                     self.event_popup = QTextBrowser(self.plot)
-                    self.event_popup.setStyleSheet("""
-                        QTextBrowser {
-                            background-color: rgba(15, 15, 15, 235);
-                            color: #00FFCC;
-                            border: 1px solid #00FFCC;
-                            border-radius: 4px;
-                            padding: 4px;
-                        }
-                        QScrollBar:vertical {
-                            background: rgba(30, 30, 30, 200);
-                            width: 10px;
-                            margin: 0px;
-                        }
-                        QScrollBar::handle:vertical {
-                            background: #00FFCC;
-                            min-height: 20px;
-                            border-radius: 3px;
-                        }
-                    """)
-                    # Stílusok azonnali érvényesítése a pontos méretszámításhoz
-                    self.event_popup.ensurePolished()
+
+                self.event_popup.setStyleSheet(f""" 
+                    QTextBrowser {{ 
+                        background-color: rgba(15, 15, 15, 235); 
+                        color: {theme_color}; 
+                        border: 1px solid {theme_color}; 
+                        border-radius: 4px; 
+                        padding: 4px; 
+                    }} 
+                    QScrollBar:vertical {{ 
+                        background: rgba(30, 30, 30, 200); 
+                        width: 10px; 
+                        margin: 0px; 
+                    }} 
+                    QScrollBar::handle:vertical {{ 
+                        background: {theme_color}; 
+                        min-height: 20px; 
+                        border-radius: 3px; 
+                    }} 
+                """)
+                # Stílusok azonnali érvényesítése a pontos méretszámításhoz
+                self.event_popup.ensurePolished()
 
                 self.event_popup.setHtml(html_text)
 
@@ -1739,13 +1863,14 @@ class Viewer(QWidget):
                 self.plot.addItem(self.click_dot)
                 self.click_dot.setData(x=[exact_timestamp], y=[y_val_for_label])
 
-                html_text = f"""
-                <div style="color: #FFFF00; font-family: monospace; font-size: {font_size}pt; font-weight: bold; padding: 5px;">
-                    Index: {idx}<br>
-                    Date: {date_str}<br>
-                    Timestamp: {tmstmp_str}<br>
-                    {unit_display}: {y_val_for_label:.4f}
-                </div>
+                html_text = f""" 
+                <div style="color: #FFFF00; font-family: monospace; 
+    font-size: {font_size}pt; font-weight: bold; padding: 5px;"> 
+                    Index: {idx}<br> 
+                    Date: {date_str}<br> 
+                    Timestamp: {tmstmp_str}<br> 
+                    {unit_display}: {y_val_for_label:.4f} 
+                </div> 
                 """
 
                 self.click_label = pg.TextItem(
