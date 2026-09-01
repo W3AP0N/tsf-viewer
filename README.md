@@ -150,7 +150,7 @@ a `tsf_viewer_config.toml` fájlban.
 ### Config fájl
 A program az első futás során legenerál egy `tsf_viewer_config.toml` fájlt,
 amiben pár változó értékét személyre szabhatjuk. 
-* Görbe( `[plot]` ):
+* Görbe ( `[plot]` ):
   * `font_size = 10`: A görbén megjelenő szövegek mérete.
   * `line_width = 3`: A görbe vonalvastagsága.
   * `event_marker_size = 13`: A felső X tengelyen lévő eseményjelölők mérete.
