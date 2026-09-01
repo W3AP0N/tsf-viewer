@@ -12,6 +12,7 @@
       * [Csatornaváltás](#csatornaváltás)
       * [Gyorsbillentyűk](#gyorsbillentyűk)
       * [Felhasználói inputok](#felhasználói-inputok)
+      * [Config fájl](#config-fájl)
 
 # TSF Viewer - Telepítési útmutató
 ## Alapfeltételek
@@ -146,3 +147,34 @@ tartozó adatokat (index, dátum, időbélyeg, mértékegység, stb..).
 lekérdezi alapértelmezetten a https://geofon.gfz-potsdam.de weboldaláról
 az adott időpillanathoz tartozó földrengés adatokat. A webcím módosítható
 a `tsf_viewer_config.toml` fájlban.
+### Config fájl
+A program az első futás során legenerál egy `tsf_viewer_config.toml` fájlt,
+amiben pár változó értékét személyre szabhatjuk. 
+* Görbe( `[plot]` ):
+  * `font_size = 10`: A görbén megjelenő szövegek mérete.
+  * `line_width = 3`: A görbe vonalvastagsága.
+  * `event_marker_size = 13`: A felső X tengelyen lévő eseményjelölők mérete.
+  * `occurrence_marker_color = cyan`: A földrengés kipattanást jelölő pötty színe.
+  Megadható szöveges és hexadecimális formátumban is, pl. `"yellow"` vagy `"#FFFF00"`
+  * `occurrence_marker_size = 8`: A földrengés kipattanást jelölő pötty mérete.
+  * `show_unmatched_events = true`: Igaz, vagy hamis értéket vehet fel. Amennyiben
+  igaz, a program kikeresi és megjeleníti azokat az eseményeket is, amikben egyik
+  állomás vagy szenzor neve sem fordul elő. Ezeket az eseményeket narancssárga jelölők jelzik.
+* Elérési út ( `[path]` ):
+  * `datumok_txt = "datumok.txt"`<br>`ftp_json = "tsf_viewer_ftp.json"`: A program futásához
+  szükséges fájlok elérési útjai. Alapértelmezett értékek: "datumok.txt" és "tsf_viewer_ftp.json"
+  (Ebben az esetben a projekt könyvtárban keressük a fájlokat).
+* Földrengés ( `[earthquake]` ):
+  * `api_url = "https://geofon.gfz-potsdam.de/fdsnws/event/1/query"`: A földrengések lekérdezésére
+  szolgáló API hívás elérési címe. Fontos, hogy a link `"/fdsnws/event/1/query"`-re kell végződjön.
+* Tömörítés ( `[compression]` ):
+  * `file_size_limit = 4`: Az ennél nagyobb TSF fájlokat a program HDF5 formátumba tömöríti.
+  Érdemes a teljes RAM méretének felét megadni, GB (gigabyte) formátumban.
+  Ezeket a bináris állományokat sokkal gyorsabban olvassa be a program,
+  ezért a gyakran megnyitott fájlokat érdemes tömöríteni. A legegyszerűbb
+  módja ennek a `file_size_limit = 0` értékre való állítása. Ilyenkor futtatás
+  után a program automatikusan megkérdezi, hogy kívánjuk-e tömöríteni.
+  * `h5_save_path = "*"`: A legenerált és tömörített HDF5 (`.h5`) fájlok mentési helye.
+  Windowson KÖTELEZŐ ilyenkor a dupla backslash (`"\\"`) a mappák jelölésénél!
+  Az elérési út végére nem kell backslash. pl. `"C:\\Users\\Public"`. Ha csillagot (`"*"`)
+  adunk meg, az eredeti fájl helyére fogja végezni a tömörítést.
