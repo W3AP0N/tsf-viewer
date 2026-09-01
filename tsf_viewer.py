@@ -87,7 +87,7 @@ if os.path.exists("tsf_viewer_config.toml"):
 else:
     print("[INFO] 'tsf_viewer_config.toml' is missing")
 
-    DEFAULT_CONFIG_GZIP = "H4sIAHgJjGoC/51UwW7bRhC98yu2zMUObMmBYyAw0IPb2k3QFgjaFC1qBcJSHJGrXe4yu0s65B/0Vl9611EHH4oAOhS9LfRfnVnKttoYTlGdyOVq3nsz781lrYx/mzxhZ6wIa5uFlWYVFAtQoDfXzPVh3UIBklVhZcHDiK4qXuObB1VBD94zegkrecqeHSVzo/3UiR7Y5/R6XxlYazRXLXeeFy4sC/54reNECQ3TK5H7EmsdD6XmoBzy+pl50AWoDjRTYdXiEThAjrpD6mGtNtf/lfJxAi0g54pbCfaO+i0e1sotYoWVY1LU3Huuw9J5dovD6rD2vqNW3WhgdG8XeDinnvK85D58uOupi3dLeM9zmIkqLJVwbG4sPvmmyrhmwlGJWo1Y2oFS5iplLS86lj65wN/RUfqIMkBt6azjOo0wLxIzmzUWlczgVurMKGNR63DtgQvbXrxIkksUXg42qa0pLK/YvPHYh7AsTU+S/pIurEjUPCwXykiG7VlZhBYs/OkXXIw+RTbnKNvIkX/vB86pd/NpK+AKqcx9PVo4o0ny3nmW4dx5TzP38ZFYLUB6JsNady0ys9RAFAHOITe8seXF/X6yRZoiEsnfBU4QaEpA9OFB/OQSuPXlu4ZLePuRRzApCiTKyqHHVzICdseoAseLsz97/YqV4abFzu00aBZuquiWCwyPcQesNDhlzjAAkqXjee70lRtHm46fjd81YLv0EAtLNAVrse395jpfoPLHrZ6W3tfudDwuwGBMR8W8P6yNdzmvRjk8DJPwWkwbq6gd/+fvyeXMVDVNQRgd24VT0zqsFNNoZZNl7M0PF/fDGUYZDfbyq4uT3TwwH9YVbpJw46OZwq/Y5Aodh19ALfDh+7PvttnDRYCTmFOL/ZA9LQ7Y11+wvUIUPOs87P8jalTvvAcJRCATmHCLYcSZKYN3dBepOSMlVwxZW8cz8pehdebwH3DP+wBL0ewtlSo6Li2P8ded8AbHcS81uoQE3AsDLUboKIXroehcD3bzR5ZhwSp8yBecOgfRy0JBTOdUiUqQiY9ux4y2aDlZjchjRXQaH7FXtCklph1T6zkdYlEKsN5pOG+8qbgXsnED5a2PxdaQMhpXLxp5CP/i/Kjvnicf830+rFcSqsEiVx8jv1MVK0QH7I3Kk/27rVKhu2JmSlr+hPuT0Lm5osR+E35/c/7t+S+b35i41ctZ3tQKJ8Rn0inuSraXTibpPn6oeF2Hpdwu8hhW8uVnW5Purq8YsphlDdUQu7uCo2FBf3k6mfzowLrJ5HWTKTHDTYWVXnI2c0IpXhiP0E8JOW80CSkO4gqzkIMXg8CoKuLMTYHzJljotWC75kdS/hNBf5om5cnU8RamtLgpvHj0N66jNKzsBwAA".strip()
+    DEFAULT_CONFIG_GZIP = "H4sIADWElmoC/51VPW/cRhTs+Ss2dCMZ8kmGLcAwkEJJpNhIDBiJgwSRjMMe+Y7c2+UuzV1SJv9BurhJr/IKFYEBFUE6Qv8r8/ZOuottyEFUnPg57715M8PT2rjwOrknjkQxXjWzcWlFRcWCDNnrd8IP41VHBWlRjcuGAk34USNrnAUyFQ0UguCTcamfiocHydzZMPVqIPEln26QSXTOStNJH2Thx4tC3o31KDHK0vRc5aEE1qMV1JyMR1+/iEC2INOTFWZcdrhEntCj7dH6eGWu3/3Xlh8l1BF6rmSjqblt/aYesPIGtcalF1rVMgRpxwsfxE0dUY9XIfRM1aUlwc9tF15dZ05lXsowvr/l1MdnS3orc8pUNV4Y5cXcNTgKbTWTVijPELWZiLQnY9x5KjpZ9CK9d4K/g4P0jskIs6VZL20ayzxJXJa1DSbJ6GbUzBnXYNbVY594YM3FE6bieSGHvVX5UlbK39YJoqMSv9jMRBxVZG2vZliLii9IUTeuaGQFCK0ASl6tOFqLbLwMSsjBaRnw73aLxMDKA6BSmuGo6JUGCGgyDhT5VS9+IDtgCoslCrzLBOatEYTNTMTxEHE+wAWKlY20mYcMm0KKjWRwNCh9t2JC01LiS3c+bW0lQ1ZSPo0S8uAq3kxOoZNy5ar1+GLeBjQ9XpRuYAX8rf24ZA3Mx4uFcRoNowCIATt/hYVUk8/tNpdQidOT8DasVpwGP592is6xuXmoJwvvLCtk53jGBK5ICPGQu1qQDkKPV7bv0FnDeovr8egNT6z7kmE3WVeaohKrZbtwgkJTLsQ3Plk/OSXZhPJNKzW9/shSCBZDGmPlNOCUfQN2nCmwZljl6OVzUY6XHa97Q1A2XlbRXCfIGgeNlA5KkAJ5oUW6P8+9Pff7cSX7D/fftNT06QMAa3hIdKB9uH6XLzD53XtOyxBq/3R/vyCHVJsU8+FB7YLPZTXJ6dNlElmradsYpuP/vJ6cZq6qeQvK2UgXtmbtuDSQbNG72Uy8+vFks5yNv8Szb04Ot+NDhPGqQvCywXjQ8TeQXEFxuENmgYMfjl6sowrOwCbmTHFYRZVVe+Lbr8ROARvP+kC7/0omxrvxlpgpBGLDibC2pu1ja95pLY1A142XM9aX4/T3eIM2fe8BinffMFTRSw1jcgtIkeCwjs2oUSU8wGYwsgqZAwkViAdEQXP952wGwGp8ny8kM0dRy8pQDLOpUZViER/crBmy6CRLjZsHIpQmJ+I5f1g0YgWuDZIvApQNbLcIl21w8L/SrV+1vNaxWgtSR+HaRasf0Ac936m7x8nH/T5efY14UEsNeg3R8luoQIgK2JmUh7u3qYI4DtEzJX8rue7PyubunB373fjHq+Pvj3+9/l2om3mlyNvaYEMy095IX4qd9Ows3cWNStb1eKHXYRnNyrr8Yi3S7fiKJotetkjkaLtbwMnqe/b107Oznzw1/uzsZTszKkNSAemZFJlXxsjCBZS+z5Xz1vIgxV6MsIZywhcjDhininXmrsC+uSwNVolt8aOp8Bmj30+T8nDqZUdTDm42Ly79Az3tZAEbCQAA".strip()
 
     answer = input("[INFO] Would you like to create one? [Y/n]: ")
 
@@ -113,6 +113,7 @@ line_width = plot_config.get("line_width", 3)
 event_marker_size = plot_config.get("event_marker_size", 13)
 occurrence_marker_color = plot_config.get("occurrence_marker_color", "cyan")
 occurrence_marker_size = plot_config.get("occurrence_marker_size", 8)
+show_unmatched_events = plot_config.get("show_unmatched_events", True)
 
 path_config = config.get("path", {})
 datumok_txt = path_config.get("datumok_txt", "datumok.txt")
@@ -751,29 +752,96 @@ class Viewer(QWidget):
             return
 
         print("Matching events found for this date")
-        formatted_text = '<hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">'.join(
-            matched_event_texts)
+
+        # Egybefűzzük a talált eseményeket, majd felhasítjuk az összes <hr> elválasztó mentén
+        raw_combined = '<hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">'.join(matched_event_texts)
+        parts = re.split(r'(?i)<hr[^>]*>', raw_combined)
+
+        rendered_sections = []
+        has_unmatched = False
+        has_normal = False
+
+        for part in parts:
+            part_stripped = part.strip()
+            if not part_stripped:
+                continue
+
+            is_unmatched_part = "flag!unm4tchd" in part_stripped
+            if is_unmatched_part:
+                has_unmatched = True
+                part_color = "#FFA500"  # Narancs
+                clean_subtext = part_stripped.replace("flag!unm4tchd", "").strip()
+            else:
+                has_normal = True
+                part_color = "#00FFCC"  # Világoskék
+                clean_subtext = part_stripped
+
+            formatted_subtext = clean_subtext.replace('\n', '<br>')
+
+            section_html = f"""
+                <div style="color: {part_color}; line-height: 1.3;">
+                    {formatted_subtext}
+                </div>
+                """
+            rendered_sections.append((section_html, part_color))
+
+        # Témaszín és fejléc beállítása a tartalom alapján
+        if has_unmatched and has_normal:
+            theme_color = "#00FFCC"
+            title_text = "[ MIXED EVENT INFO ]"
+        elif has_unmatched:
+            theme_color = "#FFA500"
+            title_text = "[ UNMATCHED EVENT INFO ]"
+        else:
+            theme_color = "#00FFCC"
+            title_text = "[ EVENT INFO ]"
+
+        # HTML tartalom összefűzése a megfelelő színű elválasztó vonalakkal
+        body_content_parts = []
+        for i, (sec_html, sec_color) in enumerate(rendered_sections):
+            if i > 0:
+                body_content_parts.append(
+                    f'<hr style="border: 0; border-top: 1px solid {sec_color}; margin: 6px 0;">'
+                )
+            body_content_parts.append(sec_html)
+
+        combined_body = "".join(body_content_parts)
 
         font_size = getattr(self, 'font_size', 10)
 
         html_text = f"""
-        <div style="color: #00FFCC; font-family: monospace; font-size: {font_size}pt;">
-            <b style="font-size: {font_size + 1}pt;">[ EVENT INFO ]</b><br>
-            <b>Date: {file_date_str}</b>
-            <hr style="border: 0; border-top: 1px solid #00FFCC; margin: 6px 0;">
-            <div style="line-height: 1.3;">{formatted_text}</div>
-        </div>
-        """
+            <div style="color: {theme_color}; font-family: monospace; font-size: {font_size}pt;">
+                <b style="font-size: {font_size + 1}pt;">{title_text}</b><br>
+                <b>Date: {file_date_str}</b>
+                <hr style="border: 0; border-top: 1px solid {theme_color}; margin: 6px 0;">
+                {combined_body}
+            </div>
+            """
 
-        # Pop-up létrehozása
+        # Pop-up létrehozása a dinamikus theme_color-rel
         parent_widget = self.plot.scene().views()[0] if self.plot.scene().views() else self.plot
         self.event_label = QTextBrowser(parent_widget)
-        self.event_label.setStyleSheet("""
-            QTextBrowser { background-color: rgba(15, 15, 15, 235); color: #00FFCC; border: 1px solid #00FFCC; border-radius: 4px; padding: 4px; }
-            QScrollBar:vertical { background: rgba(30, 30, 30, 200); width: 10px; margin: 0px; }
-            QScrollBar::handle:vertical { background: #00FFCC; min-height: 20px; border-radius: 3px; }
-        """)
+        self.event_label.setStyleSheet(f"""
+                QTextBrowser {{ 
+                    background-color: rgba(15, 15, 15, 235); 
+                    color: {theme_color}; 
+                    border: 1px solid {theme_color}; 
+                    border-radius: 4px; 
+                    padding: 4px; 
+                }}
+                QScrollBar:vertical {{ 
+                    background: rgba(30, 30, 30, 200); 
+                    width: 10px; 
+                    margin: 0px; 
+                }}
+                QScrollBar::handle:vertical {{ 
+                    background: {theme_color}; 
+                    min-height: 20px; 
+                    border-radius: 3px; 
+                }}
+            """)
 
+        self.event_label.ensurePolished()
         self.event_label.setHtml(html_text)
         self.event_label.document().setTextWidth(425)
         calc_height = min(max(int(self.event_label.document().size().height()) + 20, 70), 300)
@@ -821,20 +889,18 @@ class Viewer(QWidget):
             print(f"Events mapped to plot: {len(self.loaded_events)}\n")
 
     def _fetch_and_parse_events(self):
-
         """Letölti a szerverről a logokat, és kinyeri az egyező eseményeket egy dictionary-be."""
 
         run_id = uuid.uuid4().hex[:8]
         log_txt = f"log_for_{self.sensor.lower()}_{run_id}.txt"
         events = {}
 
-        # Tiltott stringek listája a datumok.txt-ből származó bejegyzések ellenőrzéséhez
+        # "Tiltott" stringek listája a datumok.txt-ből származó bejegyzések ellenőrzéséhez
         excluded_strings = [
             "TPSO", "COBS", "SOPGO", "SOPPAL", "BREBA", "PYNA", "PTNA",
             "HRTM1", "SOP2", "SOP3", "SOP4", "SOP5", "SOP6", "SOP7"
         ]
 
-        # Minta optimalizálása (RegEx)
         def _get_pattern(val):
             if not val:
                 return None
@@ -852,12 +918,7 @@ class Viewer(QWidget):
 
         # Segédfüggvény a (date, text) tuple lista feldolgozásához
         def _process_entries(entries, is_local_file=False):
-
             for date, new_text in entries:
-
-                # ==========================================================
-                # datumok.txt kezelése
-                # ==========================================================
                 if is_local_file:
 
                     # Megnézzük, hogy tartalmaz-e tiltott stringet
@@ -866,16 +927,16 @@ class Viewer(QWidget):
                         for exc in excluded_strings
                     )
 
-                    # Ha NEM tartalmaz tiltott stringet,
-                    # akkor feltétel nélkül bekerül.
+                    # Nincs "tiltott" string
                     if not has_excluded:
+                        if not show_unmatched_events:
+                            continue
 
                         if not new_text.startswith("flag!unm4tchd"):
                             new_text = "flag!unm4tchd" + new_text
 
+                    # Van "tiltott" string
                     else:
-                        # Ha tartalmaz tiltott stringet,
-                        # akkor kell a normál sensor/station szűrés.
                         text_upper = new_text.upper()
 
                         if not (
@@ -885,14 +946,7 @@ class Viewer(QWidget):
                         ):
                             continue
 
-                # ==========================================================
                 # FTP log kezelése
-                # ==========================================================
-                # FONTOS:
-                # Az FTP logot NEM szűrjük sensor/station alapján.
-                # Minden FTP-ből érkező esemény bekerül.
-                # ==========================================================
-
                 if date in events:
                     events[date] += (
                         '<hr style="border: 0; border-top: 1px solid #00FFCC; '
@@ -1780,62 +1834,99 @@ class Viewer(QWidget):
             if clicked_event:
                 raw_text = str(clicked_event.get('text', 'No data'))
 
-                # Ellenőrizzük, hogy tartalmazza-e az unmatched flag-et
-                is_unmatched = "flag!unm4tchd" in raw_text
+                # Felbontjuk a szöveget a beépített <hr> elválasztók mentén, hogy részenként ellenőrizhessük
+                parts = re.split(r'(?i)<hr[^>]*>', raw_text)
 
-                # Eltávolítjuk a flaget a megjelenített szövegből, hogy a felhasználó ne lássa
-                clean_text = raw_text.replace("flag!unm4tchd", "").strip()
-                formatted_text = clean_text.replace('\n', '<br>')
+                rendered_sections = []
+                has_unmatched = False
+                has_normal = False
 
-                # Szín és cím beállítása a flag alapján
-                if is_unmatched:
-                    theme_color = "#FFA500"  # Nagy narancs szín
+                for part in parts:
+                    part_stripped = part.strip()
+                    if not part_stripped:
+                        continue
+
+                    is_unmatched_part = "flag!unm4tchd" in part_stripped
+                    if is_unmatched_part:
+                        has_unmatched = True
+                        part_color = "#FFA500"  # Narancs
+                        clean_subtext = part_stripped.replace("flag!unm4tchd", "").strip()
+                    else:
+                        has_normal = True
+                        part_color = "#00FFCC"  # Világoskék
+                        clean_subtext = part_stripped
+
+                    formatted_subtext = clean_subtext.replace('\n', '<br>')
+
+                    # Egyedi rész hozzáadása a saját színével és elválasztó vonallal
+                    section_html = f"""
+                            <div style="color: {part_color}; line-height: 1.3;">
+                                {formatted_subtext}
+                            </div>
+                            """
+                    rendered_sections.append((section_html, part_color))
+
+                # Fő téma szín és cím meghatározása a tartalom alapján
+                if has_unmatched and has_normal:
+                    theme_color = "#00FFCC"  # Ha vegyes van, a keret/cím narancs vagy semleges lehet
+                    title_text = "[ MIXED EVENT INFO ]"
+                elif has_unmatched:
+                    theme_color = "#FFA500"
                     title_text = "[ UNMATCHED EVENT INFO ]"
                 else:
-                    theme_color = "#00FFCC"  # Alap világoskék szín
+                    theme_color = "#00FFCC"
                     title_text = "[ EVENT INFO ]"
 
+                # Összeállítjuk a teljes HTML-t a részek közti megfelelő színű vonalakkal
+                body_content_parts = []
+                for i, (sec_html, sec_color) in enumerate(rendered_sections):
+                    if i > 0:
+                        body_content_parts.append(
+                            f'<hr style="border: 0; border-top: 1px solid {sec_color}; margin: 6px 0;">')
+                    body_content_parts.append(sec_html)
+
+                combined_body = "".join(body_content_parts)
+
                 html_text = f""" 
-                <div style="color: {theme_color}; font-family: monospace; font-size: {font_size}pt;"> 
-                    <b style="font-size: {font_size + 1}pt;">{title_text}</b><br> 
-                    <b>Date: {clicked_event['date_str']}</b> 
-                    <hr style="border: 0; border-top: 1px solid {theme_color}; margin: 6px 0;"> 
-                    <div style="line-height: 1.3;">{formatted_text}</div> 
-                </div> 
-                """
+                        <div style="color: {theme_color}; font-family: monospace; font-size: {font_size}pt;"> 
+                            <b style="font-size: {font_size + 1}pt;">{title_text}</b><br> 
+                            <b>Date: {clicked_event['date_str']}</b> 
+                            <hr style="border: 0; border-top: 1px solid {theme_color}; margin: 6px 0;"> 
+                            {combined_body} 
+                        </div> 
+                        """
 
                 if getattr(self, 'event_popup', None) is None:
                     self.event_popup = QTextBrowser(self.plot)
 
                 self.event_popup.setStyleSheet(f""" 
-                    QTextBrowser {{ 
-                        background-color: rgba(15, 15, 15, 235); 
-                        color: {theme_color}; 
-                        border: 1px solid {theme_color}; 
-                        border-radius: 4px; 
-                        padding: 4px; 
-                    }} 
-                    QScrollBar:vertical {{ 
-                        background: rgba(30, 30, 30, 200); 
-                        width: 10px; 
-                        margin: 0px; 
-                    }} 
-                    QScrollBar::handle:vertical {{ 
-                        background: {theme_color}; 
-                        min-height: 20px; 
-                        border-radius: 3px; 
-                    }} 
-                """)
-                # Stílusok azonnali érvényesítése a pontos méretszámításhoz
-                self.event_popup.ensurePolished()
+                            QTextBrowser {{ 
+                                background-color: rgba(15, 15, 15, 235); 
+                                color: {theme_color}; 
+                                border: 1px solid {theme_color}; 
+                                border-radius: 4px; 
+                                padding: 4px; 
+                            }} 
+                            QScrollBar:vertical {{ 
+                                background: rgba(30, 30, 30, 200); 
+                                width: 10px; 
+                                margin: 0px; 
+                            }} 
+                            QScrollBar::handle:vertical {{ 
+                                background: {theme_color}; 
+                                min-height: 20px; 
+                                border-radius: 3px; 
+                            }} 
+                        """)
 
+                self.event_popup.ensurePolished()
                 self.event_popup.setHtml(html_text)
 
-                # Dinamikus ablakméretezés kiszámítása
+                # Dinamikus ablakméretezés
                 popup_w, min_h, max_h = 450, 70, 300
                 doc = self.event_popup.document()
                 doc.setTextWidth(popup_w - 25)
-                doc.adjustSize()  # Kikényszeríti a szövegelrendezés frissítését az új szélesség alapján
+                doc.adjustSize()
 
                 calc_h = int(doc.size().height()) + 20
                 actual_h = max(min_h, min(calc_h, max_h))

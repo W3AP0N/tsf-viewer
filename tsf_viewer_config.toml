@@ -18,6 +18,13 @@ event_marker_size = 13
 occurrence_marker_color = "cyan"
 occurrence_marker_size = 8
 
+# Igaz, vagy hamis értéket vehet fel. Amennyiben igaz, a program
+# kikeresi és megjeleníti azokat az eseményeket is, amikben egyik
+# állomás vagy szenzor neve sem fordul elő. Ezeket az eseményeket
+# narancssárga jelölők jelzik.
+# Alapértelmezett érték: true
+show_unmatched_events = true
+
 [path]
 # A program futásához szükséges fájlok elérési útjai.
 # Alapértelmezett értékek: "datumok.txt" és "tsf_viewer_ftp.json"
